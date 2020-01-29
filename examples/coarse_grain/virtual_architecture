@@ -1,0 +1,8 @@
+reconfigurable_partition_group
+  partition_group_name = group1
+  interface = ${local}/interface
+  reconfigurable_partition
+    partition_name = reconf_part_0
+    pblock = X40Y9:X45Y40
+  end_reconfigurable_partition   
+end_reconfigurable_partition_group

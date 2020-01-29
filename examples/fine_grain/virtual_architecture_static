@@ -1,0 +1,13 @@
+static_system_no_placement_pblocks
+  no_placement_pblock = X40Y0:X45Y8
+  no_placement_pblock = X40Y41:X45Y49
+end_static_system_no_placement_pblocks
+
+reconfigurable_partition_group
+  partition_group_name = group1
+  interface = ${local}/interface_2_inputs
+  reconfigurable_partition
+    partition_name = reconf_part_0
+    pblock = X40Y9:X45Y40
+  end_reconfigurable_partition   
+end_reconfigurable_partition_group

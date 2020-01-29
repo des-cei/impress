@@ -1,0 +1,19 @@
+static_system_no_placement_pblocks
+  no_placement_pblock = <pblock definition where logic can not be placed but that can be used for routing>
+  no_placement_pblock = <pblock definition where logic can not be placed but that can be used for routing>
+end_static_system_no_placement_pblocks
+
+reconfigurable_partition_group
+  partition_group_name = <partition_group_name>
+  interface = <path to interface file (optional)>
+  reconfigurable_partition
+    partition_name = <partition_name - the static cell which will be allocated in the partition needs to have the same name>
+    hierarchical_partition = <only fill if the partition is hierarchical to another partition>
+    pblock = <pblock definition>
+  end_reconfigurable_partition  
+  reconfigurable_partition
+    partition_name = <partition_name - the cell which will be allocated in the partition needs to have the same name>
+    hierarchical_partition = <only fill if the partition is hierarchical to another partition. clear this field if not necessary>
+    pblock = <pblock definition>
+  end_reconfigurable_partition
+end_reconfigurable_partition_group

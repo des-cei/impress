@@ -1,0 +1,9 @@
+local_nets
+  <pin name> <destination pblock or direction definition (custom or Xilinx format)>
+  <pin name> <destination pblock or direction definition (custom or Xilinx format)>
+end_local_nets
+
+global_nets
+  <pin name> <resource number>
+  <pin name> <resource number>
+end_global_nets

@@ -1,0 +1,10 @@
+local_nets
+	input1 NORTH
+	input2 NORTH
+	output1 SOUTH
+end_local_nets
+
+global_nets
+  clk 0
+  reset 1
+end_global_nets

@@ -1,0 +1,3 @@
+*.dcp
+examples/sources/projects/
+examples/*/IMPRESS_build/

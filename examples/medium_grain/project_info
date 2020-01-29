@@ -1,0 +1,29 @@
+project_variables
+  project_name = IMPRESS_build
+  directory = ${local}
+  fpga_chip = xc7z020clg400-1
+end_project_variables
+
+reconfigurable_modules
+  reconfigurable_module
+    module_name = add
+    sources = ${local}/../sources/coarse/design_time/reconfigurable/add.vhd
+    partition_group_name = group1
+  end_reconfigurable_module
+  reconfigurable_module
+    module_name = substract  
+    sources = ${local}/../sources/coarse/design_time/reconfigurable/substract.vhd
+    partition_group_name = group1
+  end_reconfigurable_module
+  reconfigurable_module
+    module_name = shift1 
+    sources = ${local}/../sources/medium/design_time/reconfigurable/shift1.vhd
+    partition_group_name = group2
+  end_reconfigurable_module
+  reconfigurable_module
+    module_name = shift2 
+    sources = ${local}/../sources/medium/design_time/reconfigurable/shift2.vhd
+    partition_group_name = group2
+  end_reconfigurable_module 
+  virtual_architecture = ${local}/virtual_architecture
+end_reconfigurable_modules

@@ -1,0 +1,26 @@
+project_variables
+  project_name = IMPRESS_build
+  directory = ${local}
+  fpga_chip = xc7z020clg400-1
+end_project_variables
+
+static_system 
+	  sources = ${local}/../sources/fine/design_time/static/synth_checkpoint/
+	  virtual_architecture = ${local}/virtual_architecture_static
+end_static_system
+
+reconfigurable_modules
+  reconfigurable_module
+    module_name = top_module
+    sources = ${local}/../sources/fine/design_time/reconfigurable/top_module.vhd
+    sources = ${local}/../sources/fine/design_time/reconfigurable/lut_components
+    partition_group_name = group1
+  end_reconfigurable_module
+  reconfigurable_module
+    module_name = bottom_module 
+    sources = ${local}/../sources/fine/design_time/reconfigurable/bottom_module.vhd
+    sources = ${local}/../sources/fine/design_time/reconfigurable/lut_components
+    partition_group_name = group2
+  end_reconfigurable_module
+  virtual_architecture = ${local}/virtual_architecture_reconfigurable
+end_reconfigurable_modules 

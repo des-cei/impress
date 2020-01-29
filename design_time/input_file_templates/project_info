@@ -1,0 +1,31 @@
+project_variables
+  project_name = <project_name - a folder with this name will be created and will store the reconfiguration project>
+  directory = <path where the project directory will be created>
+  fpga_chip = <target FPGA>
+  ip_repository = <ip repository path> 
+  ip_repository = <ip repository path> 
+end_project_variables
+
+static_system
+  sources = <path with the static source file>
+  sources = <path with the static source file>
+  virtual_architecture = <path to static virtual architecture file>
+end_static_system
+
+reconfigurable_modules
+  reconfigurable_module
+    module_name = <module_name - it is used to name the PBS>
+    sources = <path with the module source file>
+    sources = <path with the module source file>
+    partition_group_name = <name of the partition group where the the module can be allocated>
+    partition_group_name = <name of the partition group where the the module can be allocated>
+  end_reconfigurable_module
+  reconfigurable_module
+    module_name = <module_name - it is used to name the PBS>
+    sources = <path with the module source file>
+    sources = <path with the module source file>
+    partition_group_name = <name of the partition group where the the module can be allocated>
+    partition_group_name = <name of the partition group where the the module can be allocated>
+  end_reconfigurable_module
+  virtual_architecture = <path to reconfigurable virtual architecture file>
+end_reconfigurable_modules
