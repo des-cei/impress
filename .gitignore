@@ -1,3 +1,4 @@
 *.dcp
+*.pyc
 examples/sources/projects/
 examples/*/IMPRESS_build/
