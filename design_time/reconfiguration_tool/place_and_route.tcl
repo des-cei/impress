@@ -336,13 +336,25 @@ namespace eval ::reconfiguration_tool::place_and_route {
       route_design -unroute -nets $conflict_nets
       route_design -nets $conflict_nets
     }
+    
+    # If we still have conflicting nets we try another strategy. First we route the global clocks. 
+  # Then we route local nets. Finally we reroute the global clocks again
+  set conflict_nets [get_nets -hierarchical -filter {ROUTE_STATUS != NOLOADS && ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence*}]
+  if {[llength $conflict_nets] > 0} {
+    route_design -unroute
+    if {[catch configure_and_route_global_nets errMsg]} {
+      error $errMsg
+    }
+    set_property is_route_fixed 0 [get_nets -hierarchical -filter {NAME !~ *fence*}]
+    route_design -auto_delay -nets [get_nets -hierarchical -filter {ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence*}] -quiet
+  }
     # If we route the global clocks before the rest of the design I do not 
     # know why but a lot of hold violations appear.
     if {[catch configure_and_route_global_nets errMsg]} {
       error $errMsg
     }
     
-    phys_opt_design -placement_opt -routing_opt -slr_crossing_opt -rewire -insert_negative_edge_ffs -critical_cell_opt -hold_fix -retime -critical_pin_opt -quiet
+    phys_opt_design -placement_opt -routing_opt -slr_crossing_opt -rewire -insert_negative_edge_ffs -critical_cell_opt -hold_fix -retime -critical_pin_opt -clock_opt -quiet
     
     if {[llength [get_nets -hierarchical -filter {ROUTE_STATUS != NOLOADS && ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence*}]]} {
       error "routing errors"

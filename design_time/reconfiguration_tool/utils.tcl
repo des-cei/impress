@@ -393,12 +393,11 @@ namespace eval ::reconfiguration_tool::utils {
     set EAST_INT_tiles {}
     set WEST_INT_tiles {}
     set rectangle_count [get_property RECTANGLE_COUNT $pblock]
-    if {$rectangle_count == 1} {
-      set NORTH_INT_tiles [lsort -dictionary -increasing [get_tiles -filter "TYPE =~ INT_? && INT_TILE_Y == [lindex $Y_properties end]" -of_objects $tiles_pblock]]
-      set SOUTH_INT_tiles [lsort -dictionary -increasing [get_tiles -filter "TYPE =~ INT_? && INT_TILE_Y == [lindex $Y_properties 0]" -of_objects $tiles_pblock]]
+    if {$rectangle_count == 1 && $expansion == 0} {
+      set NORTH_INT_tiles [get_tiles -filter "TYPE =~ INT_? && INT_TILE_Y == [lindex $Y_properties end]" -of_objects $tiles_pblock]
+      set SOUTH_INT_tiles [get_tiles -filter "TYPE =~ INT_? && INT_TILE_Y == [lindex $Y_properties 0]" -of_objects $tiles_pblock]
       set EAST_INT_tiles [lsort -dictionary -increasing [get_tiles -filter "TYPE =~ INT_? && INT_TILE_X == [lindex $X_properties end]" -of_objects $tiles_pblock]]
       set WEST_INT_tiles [lsort -dictionary -increasing [get_tiles -filter "TYPE =~ INT_? && INT_TILE_X == [lindex $X_properties 0]" -of_objects $tiles_pblock]]
-      
     } else {
       foreach X_property $X_properties {
         set column_tiles [get_tiles -filter "TYPE =~ INT_? && INT_TILE_X == $X_property" -of_objects $INT_tiles_pblock]

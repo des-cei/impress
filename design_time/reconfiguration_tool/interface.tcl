@@ -423,9 +423,9 @@ namespace eval ::reconfiguration_tool::interface {
   ########################################################################################
   proc delete_duplicated_partition_pins {} {
     set input_partition_pins [get_pins -hierarchical -filter {HD.PARTPIN_LOCS != {} && DIRECTION == IN}]
-    set input_partition_pin_nodes [get_property HD.PARTPIN_LOCS $input_partition_pins]
+    set input_partition_pin_nodes [get_property -quiet HD.PARTPIN_LOCS $input_partition_pins]
     set output_partition_pins [get_pins -hierarchical -filter {HD.PARTPIN_LOCS != {} && DIRECTION == OUT}]
-    set output_partition_pin_nodes [get_property HD.PARTPIN_LOCS $output_partition_pins]
+    set output_partition_pin_nodes [get_property -quiet HD.PARTPIN_LOCS $output_partition_pins]
     set duplicate_partition_pins_nodes [::struct::set intersect $output_partition_pin_nodes $input_partition_pin_nodes]
     foreach partition_pin_node $duplicate_partition_pins_nodes {
       set pin [get_pins -hierarchical -filter "HD.PARTPIN_LOCS == $partition_pin_node && DIRECTION == IN"]
