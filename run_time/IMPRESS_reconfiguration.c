@@ -745,60 +745,81 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
   * NOTE in overlays constant columns come first then mux columns and finally FUs.
   */
   void change_partition_constant(virtual_architecture_t *virtual_architecture, int x, int y, int constant_number, uint32_t value[MAX_WORDS_PER_CONSTANT]) {
-    int i;
-    int total_bits_to_send, bits_sent, first_bit, last_bit, bits_to_send;
-    uint32_t frame_address_position;
-    
-    virtual_architecture->partition[x][y].element.constants_definition[constant_number].initialized = 1;
-    
-    total_bits_to_send = virtual_architecture->partition[x][y].element.element_info->num_bits_in_constant[constant_number];
-    bits_sent = 0;
-    i = 0;
-    while (total_bits_to_send > bits_sent) {
-      frame_address_position = virtual_architecture->partition[x][y].element.constant_frame_address_position[constant_number][i];
-      first_bit = virtual_architecture->partition[x][y].element.first_bit_in_frame[constant_number][i];
-      last_bit = virtual_architecture->partition[x][y].element.last_bit_in_frame[constant_number][i];
-      bits_to_send = last_bit + 1 - first_bit;
-      change_constant_frame_address(frame_address_position, first_bit, last_bit, bits_sent, &value[0]);
-      i++;
-      bits_sent += bits_to_send;
-    }
-  }
+      int i;
+      int total_bits_to_send, bits_sent, first_bit, last_bit, bits_to_send;
+      uint32_t frame_address_position;
 
-  static void change_constant_frame_address(uint32_t frame_address_position, int first_bit, int last_bit, int previous_bits_sent, uint32_t *value) {
-    uint32_t first_frame_word, first_frame_bit, last_frame_word, last_frame_bit, frame_mask;
-    uint32_t aux_value;
-    uint32_t j, k;
-    
-    constant_frames_flags[frame_address_position] = RECONFIGURE_FRAME;
-    
-    first_frame_word = first_bit / 32;
-    last_frame_word = last_bit / 32;
-    
-    
-    for (j = first_frame_word; j <= last_frame_word; j++) {
-      if (j == first_frame_word) {
-        first_frame_bit = (first_bit % 32);
-      } else {
-        first_frame_bit = 0;
+      virtual_architecture->partition[x][y].element.constants_definition[constant_number].initialized = 1;
+
+      total_bits_to_send = virtual_architecture->partition[x][y].element.element_info->num_bits_in_constant[constant_number];
+      bits_sent = 0;
+      i = 0;
+      while (total_bits_to_send > bits_sent) {
+        frame_address_position = virtual_architecture->partition[x][y].element.constant_frame_address_position[constant_number][i];
+        first_bit = virtual_architecture->partition[x][y].element.first_bit_in_frame[constant_number][i];
+        last_bit = virtual_architecture->partition[x][y].element.last_bit_in_frame[constant_number][i];
+        bits_to_send = last_bit + 1 - first_bit;
+ 		if ((bits_to_send == 32) && ((first_bit % 32) == 0)) {
+ 			constant_t_frames[frame_address_position].value[first_bit/32] = value[0];
+ 			constant_frames_flags[frame_address_position] = RECONFIGURE_FRAME;
+ 			return;
+ 		} else if ((bits_to_send == 16) && ((first_bit % 16) == 0)) {
+ 			//tmp = first_bit/32;
+ 			if ((first_bit%32) == 0) {
+ 				constant_t_frames[frame_address_position].value[first_bit/32] = (constant_t_frames[frame_address_position].value[first_bit/32]&0xFFFF0000) | (value[0]&0x0000FFFF);
+ 			} else {
+ 				constant_t_frames[frame_address_position].value[first_bit/32] = (constant_t_frames[frame_address_position].value[first_bit/32]&0x0000FFFF) | (value[0]<<16);
+ 			}
+ 			constant_frames_flags[frame_address_position] = RECONFIGURE_FRAME;
+ 			return;
+         } else {
+ 			change_constant_frame_address(frame_address_position, first_bit, last_bit, bits_sent, &value[0]);
+ 		}
+ 		//change_constant_frame_address(frame_address_position, first_bit, last_bit, bits_sent, &value[0]);
+        i++;
+        bits_sent += bits_to_send;
       }
-      if (j == last_frame_word) {
-        last_frame_bit = (last_bit % 32);
-      } else {
-        last_frame_bit = 31;
-      }
-      
-      aux_value = 0;
-      frame_mask = 0;
-      for (k = first_frame_bit; k <= last_frame_bit; k++) {
-        frame_mask |= (0x1 << k);
-        aux_value |= ((value[previous_bits_sent/32] >> (previous_bits_sent % 32)) & 1) << k;
-        previous_bits_sent++;
-      }
-      
-      constant_t_frames[frame_address_position].value[j] = (constant_t_frames[frame_address_position].value[j] & (~frame_mask)) | aux_value;
     }
-  }
+
+   static void change_constant_frame_address(uint32_t frame_address_position, int first_bit, int last_bit, int previous_bits_sent, uint32_t *value) {
+      uint32_t first_frame_word, first_frame_bit, last_frame_word, last_frame_bit, frame_mask;
+      uint32_t aux_value;
+      uint32_t j, k;
+
+  	constant_frames_flags[frame_address_position] = RECONFIGURE_FRAME;
+
+ 	if (((last_bit + 1 - first_bit) == 32) && ((first_bit % 32) == 0)) {
+ 		constant_t_frames[frame_address_position].value[first_bit/32] = value[0];
+ 		return;
+ 	}
+
+  	first_frame_word = first_bit / 32;
+  	last_frame_word = last_bit / 32;
+
+
+  	for (j = first_frame_word; j <= last_frame_word; j++) {
+  	if (j == first_frame_word) {
+  	  first_frame_bit = (first_bit % 32);
+  	} else {
+  	  first_frame_bit = 0;
+  	}
+  	if (j == last_frame_word) {
+  	  last_frame_bit = (last_bit % 32);
+  	} else {
+  	  last_frame_bit = 31;
+  	}
+
+  	aux_value = 0;
+  	frame_mask = 0;
+  	for (k = first_frame_bit; k <= last_frame_bit; k++) {
+  	  frame_mask |= (0x1 << k);
+  	  aux_value |= ((value[previous_bits_sent/32] >> (previous_bits_sent % 32)) & 1) << k;
+  	  previous_bits_sent++;
+  	}
+
+  	constant_t_frames[frame_address_position].value[j] = (constant_t_frames[frame_address_position].value[j] & (~frame_mask)) | aux_value;
+  	}
+    }
 
 
   void change_partition_mux(virtual_architecture_t *virtual_architecture, int x, int y, int mux_number, int value) {
