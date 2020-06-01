@@ -24,5 +24,7 @@
 #define NUM_FRAME_BYTES                 404 
 #define NUM_FRAME_WORDS                 101 
 #define BYTES_PER_WORD_OF_FRAME				 	4
+#define FRAMES_CLK_INTERCONNECT 		    26
+
 
 #endif
