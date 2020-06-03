@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #if FINE_GRAIN
+#define SEARCH_IF_FINE_GRAIN_VALUE_HAS_CHANGED		0
 /*Constant declaration*/
 #define ICAP_CTRL_BASEADDR  XPAR_FINE_GRAIN_RE_0_S_CTRL_BASEADDR
 #define ICAP_MEM_BASEADDR   XPAR_FINE_GRAIN_RE_0_S_MEM_BASEADDR
@@ -145,6 +146,14 @@ int change_partition_element(virtual_architecture_t *virtual_architecture, int x
   int status;
   pblock pblock_1;
   
+  if (virtual_architecture->partition[x][y].element.element_info == &elements[element_info]) {
+    return XST_SUCCESS;
+  } else if (element_info == -1) {
+    //We can use this command to invalidate a partition. This can be used for example when other partition overwrite in the location of this partition
+    virtual_architecture->partition[x][y].element.element_info = NULL;
+    return XST_SUCCESS;
+  }
+  
   virtual_architecture->partition[x][y].element.element_info = &elements[element_info];
   
   char *filename = virtual_architecture->partition[x][y].element.element_info->PBS_name;
@@ -168,6 +177,7 @@ int change_partition_element(virtual_architecture_t *virtual_architecture, int x
 }
 
 void change_partition_position(virtual_architecture_t *virtual_architecture, int x, int y, int position_x, int position_y) {
+  virtual_architecture->partition[x][y].element.element_info = NULL;
   virtual_architecture->partition[x][y].position[X_POS] = position_x;
   virtual_architecture->partition[x][y].position[Y_POS] = position_y;
   update_partition_location_info(virtual_architecture, x, y);
@@ -749,9 +759,25 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
       int total_bits_to_send, bits_sent, first_bit, last_bit, bits_to_send;
       uint32_t frame_address_position;
 
-      virtual_architecture->partition[x][y].element.constants_definition[constant_number].initialized = 1;
-
       total_bits_to_send = virtual_architecture->partition[x][y].element.element_info->num_bits_in_constant[constant_number];
+
+      #if SEARCH_IF_FINE_GRAIN_VALUE_HAS_CHANGED == 1
+        int same_value = 1;
+
+      for (i = 0; i <= ((total_bits_to_send-1)/32); i++) {
+        if (value[i] != virtual_architecture->partition[x][y].element.constants_definition[constant_number].value[i]) {
+          same_value = 0;
+          virtual_architecture->partition[x][y].element.constants_definition[constant_number].value[i] = value[i];
+        }
+      }
+      // The constant already has that value
+      if (same_value == 1 && virtual_architecture->partition[x][y].element.constants_definition[constant_number].initialized == 1) {
+        return;
+      }
+
+        virtual_architecture->partition[x][y].element.constants_definition[constant_number].initialized = 1;
+      #endif
+
       bits_sent = 0;
       i = 0;
       while (total_bits_to_send > bits_sent) {
@@ -827,7 +853,21 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
     int frame_address_position, first_LUT, last_LUT;
     int i;
     
-    virtual_architecture->partition[x][y].element.mux_definition[mux_number].initialized = 1;
+    #if SEARCH_IF_FINE_GRAIN_VALUE_HAS_CHANGED == 1
+      int same_value = 1;
+      if (value != virtual_architecture->partition[x][y].element.mux_definition[mux_number].value) {
+       same_value = 0;
+       virtual_architecture->partition[x][y].element.mux_definition[mux_number].value = value;
+      }
+
+      // The constant already has that value
+      if (same_value == 1 && virtual_architecture->partition[x][y].element.mux_definition[mux_number].initialized == 1) {
+       return;
+      }
+
+      virtual_architecture->partition[x][y].element.mux_definition[mux_number].initialized = 1;
+    #endif
+
     num_inputs = virtual_architecture->partition[x][y].element.element_info->mux_num_inputs[mux_number];
     total_LUTs_to_send = virtual_architecture->partition[x][y].element.total_LUTs_in_mux[mux_number];
     LUTs_sent = 0;
@@ -894,7 +934,21 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
     int total_blocks_to_send, blocks_sent, first_block, last_block, blocks_to_send;
     uint32_t frame_address_position;
     
-    virtual_architecture->partition[x][y].element.FU_definition[FU_number].initialized = 1;
+    #if SEARCH_IF_FINE_GRAIN_VALUE_HAS_CHANGED == 1
+      int same_value = 1;
+
+      if (value != virtual_architecture->partition[x][y].element.FU_definition[FU_number].value) {
+       same_value = 0;
+       virtual_architecture->partition[x][y].element.FU_definition[FU_number].value = value;
+      }
+
+      // The constant already has that value
+      if (same_value == 1 && virtual_architecture->partition[x][y].element.FU_definition[FU_number].initialized == 1) {
+       return;
+      }
+
+      virtual_architecture->partition[x][y].element.FU_definition[FU_number].initialized = 1;
+    #endif
     
     total_blocks_to_send = virtual_architecture->partition[x][y].element.element_info->FU_4_bit_blocks[FU_number];
     blocks_sent = 0;

@@ -83,9 +83,7 @@ typedef enum  {	    add,
 
   typedef struct {
 	int initialized;
-	// mux_definition has a range from 0 to 3. With this variable we can define the entire
-	// mux.
-	int mux_definition;
+	int value;
   } mux_t;
 
   typedef struct {
