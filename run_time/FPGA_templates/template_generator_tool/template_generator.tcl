@@ -166,27 +166,14 @@ proc write_run_time_description {file_path resource_list row_order_list first_to
   set file_c [open ${file_path}/${fpga_name}.c w] 
   
   # We write the configuration resources array
-  puts $file_c "\#include \"xc7z020.h\""
+  puts $file_c "\#include \"${fpga_name}.h\""
   puts $file_c ""
-  puts $file_c "// BRAM content definitions"
-  puts $file_c "#define BRAM_CONTENT   1"
-  puts $file_c "#define BRAM_NOCONTENT 0"
   puts $file_c "// Clock region definitions"
   puts $file_c "#define BOTTOM 1"
   puts $file_c "#define TOP    0"
   for {set i 0} {$i < [llength $row_order_list]} {incr i} {
     puts $file_c "#define ROW${i}   ${i}"
   }
-  puts $file_c "// Block type definition"
-  puts $file_c "#define CLB_L_TYPE 		0"
-  puts $file_c "#define CLB_M_TYPE 		1"
-  puts $file_c "#define DSP_TYPE 			2"
-  puts $file_c "#define BRAM_TYPE 		3"
-  puts $file_c "#define IOBA_TYPE 		4"
-  puts $file_c "#define IOBB_TYPE 		5"
-  puts $file_c "#define CLK_TYPE 			6"
-  puts $file_c "#define CFG_TYPE			7"
-  puts $file_c "#define GT_TYPE 			8"
   puts $file_c "// ID generation"
   puts $file_c "#define block(top, row, type)  ((top<<24) | (row<<16) | (type))"
   puts $file_c "#define content(yes_no, major)  ((yes_no<<16) | (major))"
@@ -228,7 +215,7 @@ proc write_run_time_description {file_path resource_list row_order_list first_to
           set resource_name CLK
           set resource_type CLK_TYPE
         }
-        GTX {
+        GT {
           set resource_name GT
           set resource_type GT_TYPE
         }
@@ -306,6 +293,21 @@ proc write_run_time_description {file_path resource_list row_order_list first_to
   puts $file_h ""
   puts $file_h "#include \"series7.h\""
   puts $file_h "#include \"xil_types.h\""
+  puts $file_h ""
+  puts $file_c "// BRAM content definitions"
+  puts $file_c "#define BRAM_CONTENT   1"
+  puts $file_c "#define BRAM_NOCONTENT 0"
+  puts $file_h ""
+  puts $file_c "// Block type definition"
+  puts $file_c "#define CLB_L_TYPE 		0"
+  puts $file_c "#define CLB_M_TYPE 		1"
+  puts $file_c "#define DSP_TYPE 			2"
+  puts $file_c "#define BRAM_TYPE 		3"
+  puts $file_c "#define IOBA_TYPE 		4"
+  puts $file_c "#define IOBB_TYPE 		5"
+  puts $file_c "#define CLK_TYPE 			6"
+  puts $file_c "#define CFG_TYPE			7"
+  puts $file_c "#define GT_TYPE 			8"
   puts $file_h ""
   puts $file_h "#define MAX_ROWS    [llength $row_order_list]"
   puts $file_h "#define MAX_COLUMNS $max_column"
