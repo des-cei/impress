@@ -51,7 +51,9 @@ namespace eval ::reconfiguration_tool::place_and_route {
   ########################################################################################
   proc get_fence_nodes {} {
     set reconfigurable_resource_tiles [get_tiles -of_objects [get_sites -of_objects [get_pblocks -filter "NAME != pblock_no_placement"]]]
-    set reconfigurable_INT_and_resource_tiles [get_tiles -of_objects $reconfigurable_resource_tiles]
+    set x_coordinate [lsort -unique -increasing -integer [get_property COLUMN $reconfigurable_resource_tiles]]
+    set y_coordinate [lsort -unique -increasing -integer [get_property ROW $reconfigurable_resource_tiles]]
+    set reconfigurable_INT_and_resource_tiles [get_tiles -filter "COLUMN <= [lindex $x_coordinate end] && COLUMN >= [lindex $x_coordinate 0] && ROW <= [lindex $y_coordinate end] && ROW >= [lindex $y_coordinate 0]"]
     set reconfigurable_nodes [lsort -unique [get_nodes -downhill -uphill -of_objects $reconfigurable_INT_and_resource_tiles -filter {COST_CODE_NAME != GLOBAL}]]
     # BRAM cascade nodes need to be treated in a special way. The reason for this is 
     # that these nodes are very long and can have multiple destinations (some inside the 
@@ -63,7 +65,15 @@ namespace eval ::reconfiguration_tool::place_and_route {
     # that no route can go outside the pblock and return back inside of it. 
     set exception_BRAM_nodes [lsort -unique [get_nodes -downhill -of_objects $reconfigurable_INT_and_resource_tiles -filter {NAME =~ *BRAM_CASCOUT*}]]
     
-    set all_tiles [get_tiles *]
+    # set all_tiles [get_tiles *]
+    #we only select part of the tiles to increase the speed in large FPGAs 
+    set extended_tiles_length 80
+    set max_x [expr [lindex $x_coordinate end] + $extended_tiles_length]
+    set max_y [expr [lindex $y_coordinate end] + $extended_tiles_length]
+    set min_x [expr [lindex $x_coordinate 0] - $extended_tiles_length]
+    set min_y [expr [lindex $y_coordinate 0] - $extended_tiles_length]
+    set all_tiles [get_tiles -filter "INT_TILE_X < $max_x && INT_TILE_X > $min_x && INT_TILE_Y < $max_y && INT_TILE_Y > $min_y"]
+    
     set tiles_outside_pblock [::struct::set difference $all_tiles $reconfigurable_INT_and_resource_tiles] 
     set rest_of_all_nodes [lsort -unique [get_nodes -downhill -uphill -of_objects $tiles_outside_pblock -filter {COST_CODE_NAME != GLOBAL}]]
 
@@ -71,6 +81,7 @@ namespace eval ::reconfiguration_tool::place_and_route {
     
     return $interface_nodes
   }
+
 
   ########################################################################################
   # This function computes the common nodes between the pblock and the rest of the FPGA 

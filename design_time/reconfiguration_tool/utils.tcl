@@ -25,6 +25,7 @@ namespace eval ::reconfiguration_tool::utils {
   namespace export log_success
   namespace export obtain_hierarchical_partitions
   namespace export clean_design
+  namespace export compare_relocatable_regions
   
   ########################################################################################
   # Creates an empty project and the folder structure for the current design 
@@ -488,6 +489,93 @@ namespace eval ::reconfiguration_tool::utils {
       }
     }
     return $hierarchical_reconfigurable_partition_list
+  }
+  
+  proc find_reconfigurable_resource_type {tile_type} {
+     
+    if {[string first CLBLM $tile_type] != -1} {
+      set resource_type CLB_M
+    } elseif {[string first CLBLL $tile_type] != -1} {
+      set resource_type CLB_L
+    } elseif {[string first DSP $tile_type] != -1} {
+      set resource_type DSP
+    } elseif {[string first BRAM $tile_type] != -1} {
+      set resource_type BRAM
+    } else {
+      set resource_type IRRELEVANT
+    }
+    
+    return $resource_type
+  }
+  
+  ########################################################################################
+  # This function compares 2 regions and return 1 if they are relocatable or 0 if they are 
+  # not
+  #
+  # Argument Usage:
+  # pblock1, pblock2: definitions of pblocks to compare
+  #
+  # Return Value: 1 if they are relocatable or 0 if the are not
+  ########################################################################################
+  proc compare_relocatable_regions {pblock1 pblock2} {
+    set pblock1_xilinx [change_pblock_format_from_custom_to_xilinx $pblock1] 
+    set pblock2_xilinx [change_pblock_format_from_custom_to_xilinx $pblock2]
+    
+    create_and_place_pblock compare_pblock_1 $pblock1_xilinx
+    create_and_place_pblock compare_pblock_2 $pblock2_xilinx
+    
+    set pblock1_resource_tiles [get_tiles -of_objects [get_sites -of_objects [get_pblocks -filter "NAME == compare_pblock_1"]]]
+    set y_coordinate_1 [lsort -unique -increasing [get_property ROW $pblock1_resource_tiles]]
+    set max_y_1 [lindex $y_coordinate_1 end]
+    set min_y_1 [lindex $y_coordinate_1 0]
+    set x_coordinate_1 [lsort -unique -increasing [get_property COLUMN $pblock1_resource_tiles]]
+    set max_x_1 [lindex $x_coordinate_1 end]
+    set min_x_1 [lindex $x_coordinate_1 0]
+    
+    
+    set pblock2_resource_tiles [get_tiles -of_objects [get_sites -of_objects [get_pblocks -filter "NAME == compare_pblock_2"]]]
+    set y_coordinate_2 [lsort -unique -increasing [get_property ROW $pblock2_resource_tiles]]
+    set max_y_2 [lindex $y_coordinate_2 end]
+    set min_y_2 [lindex $y_coordinate_2 0]
+    set x_coordinate_2 [lsort -unique -increasing [get_property COLUMN $pblock2_resource_tiles]]
+    set max_x_2 [lindex $x_coordinate_2 end]
+    set min_x_2 [lindex $x_coordinate_2 0]
+    
+    set resource_list_pblock_1 [list] 
+    for {set i $min_x_1} {$i <= $max_x_1} {incr i} {
+      for {set j $min_y_1} {$j <= $max_y_1} {incr j} {
+        set tile_type [get_property TILE_TYPE [get_tiles -filter "COLUMN == $i && ROW == $j"]]
+        set reconfigurable_tile_type [find_reconfigurable_resource_type $tile_type] 
+        if {$reconfigurable_tile_type != "IRRELEVANT"} {
+          puts "type $reconfigurable_tile_type"
+          set resource_list_pblock_1 [concat $resource_list_pblock_1 $reconfigurable_tile_type]
+        }
+      }
+    }
+    
+    set resource_list_pblock_2 [list] 
+    for {set i $min_x_2} {$i <= $max_x_2} {incr i} {
+      for {set j $min_y_2} {$j <= $max_y_2} {incr j} {
+        set tile_type [get_property TILE_TYPE [get_tiles -filter "COLUMN == $i && ROW == $j"]]
+        set reconfigurable_tile_type [find_reconfigurable_resource_type $tile_type] 
+        if {$reconfigurable_tile_type != "IRRELEVANT"} {
+          set resource_list_pblock_2 [concat $resource_list_pblock_2 $reconfigurable_tile_type]
+        }
+      }
+    }
+    
+    delete_pblocks compare_pblock_1
+    delete_pblocks compare_pblock_2
+    
+    if {[::struct::list equal $resource_list_pblock_1 $resource_list_pblock_2]} {
+      # pblcoks are relocatable
+      return 1
+    } else {
+      #pblocks are not relocatable 
+      return 0
+    }
+    
+  
   }
   
 }
