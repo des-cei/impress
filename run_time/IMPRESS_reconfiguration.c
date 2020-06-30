@@ -72,7 +72,7 @@ static void init_num_FU_columns_elements();
 static void init_constant_frames();
 static void init_mux_frames();
 static void init_FU_frames();
-static uint32_t obtain_frame_address_of_CLB_column(virtual_architecture_t virtual_architecture, int x, int y, int clock_row_number, int column_number);
+static uint32_t obtain_frame_address_of_CLB_column(virtual_architecture_t *virtual_architecture, int x, int y, int clock_row_number, int column_number);
 static void change_constant_frame_address(uint32_t frame_address_position, int first_bit, int last_bit, int previous_bits_sent, uint32_t *value);
 static void change_mux_frame_address(uint32_t frame_address_position, int first_LUT, int last_LUT, int value, int LUT_position, int num_inputs);
 static void change_FU_frame_address(uint32_t frame_address_position, int first_block, int last_block, int value);
@@ -410,7 +410,7 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
       total_bits_to_send = virtual_architecture->partition[x][y].element.element_info->num_bits_in_constant[i];
       j = 0;
       while (total_bits_to_send > 0) {
-        frame_address = obtain_frame_address_of_CLB_column(*virtual_architecture, x, y, clock_row_number, *column);
+        frame_address = obtain_frame_address_of_CLB_column(virtual_architecture, x, y, clock_row_number, *column);
         if (frame_address == -1) {
           return -1;
         }
@@ -508,7 +508,7 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
       j = 0;
       LUT_position = 0;
       while (total_LUTs_to_send > 0) {
-        frame_address = obtain_frame_address_of_CLB_column(*virtual_architecture, x, y, clock_row_number, *column);
+        frame_address = obtain_frame_address_of_CLB_column(virtual_architecture, x, y, clock_row_number, *column);
         if (frame_address == -1) {
           return -1;
         }
@@ -601,7 +601,7 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
       total_blocks_to_send = virtual_architecture->partition[x][y].element.element_info->FU_4_bit_blocks[i];
       j = 0;
       while (total_blocks_to_send > 0) {
-        frame_address = obtain_frame_address_of_CLB_column(*virtual_architecture, x, y, clock_row_number, (*column));
+        frame_address = obtain_frame_address_of_CLB_column(virtual_architecture, x, y, clock_row_number, (*column));
         if (frame_address == -1) {
           return -1;
         }
@@ -1047,14 +1047,14 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
   /*
   *
   */
-  static uint32_t obtain_frame_address_of_CLB_column(virtual_architecture_t virtual_architecture, int x, int y, int clock_row_number, int column_number ) {
+  static uint32_t obtain_frame_address_of_CLB_column(virtual_architecture_t *virtual_architecture, int x, int y, int clock_row_number, int column_number ) {
     int first_column, last_column, row, column;
     int CLB_columns, minor_column;
     uint32_t frame_address = 0;
     
     
-    first_column = virtual_architecture.partition[x][y].location_info.first_column;
-    last_column = virtual_architecture.partition[x][y].location_info.last_column;
+    first_column = virtual_architecture->partition[x][y].location_info.first_column;
+    last_column = virtual_architecture->partition[x][y].location_info.last_column;
     row = clock_row_number;
     column = first_column;
     CLB_columns = 0;

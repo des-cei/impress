@@ -5,7 +5,7 @@ project_variables
 end_project_variables
 
 static_system
-  sources = ${local}/../sources/coarse/design_time/static/synth_checkpoint/
+  sources = ${local}/../sources/coarse/design_time/static/synth_checkpoint.dcp
   virtual_architecture = ${local}/virtual_architecture
 end_static_system
 
