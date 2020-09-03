@@ -37,10 +37,13 @@ namespace eval ::reconfiguration_tool::fine_grain_luts {
       return
     }   
     set pblocks_fine_grain [lsort -dictionary -unique [get_property PBLOCK_FINE_GRAIN $fine_grain_elements]] 
+    set i 0
     foreach pblock $pblocks_fine_grain {
-      create_and_place_pblock pblock_fine_grain [change_pblock_format_from_custom_to_xilinx $pblock]
-      place_fine_grain_luts_pblock pblock_fine_grain $pblock 
-      # delete_pblocks [get_pblocks pblock_fine_grain]
+      set pblock_name pblock_fine_grain_${i}
+      create_and_place_pblock $pblock_name [change_pblock_format_from_custom_to_xilinx $pblock]
+      place_fine_grain_luts_pblock $pblock_name $pblock 
+      # delete_pblocks [get_pblocks $pblock_name]
+      incr i
     }
   }
   
@@ -79,7 +82,7 @@ namespace eval ::reconfiguration_tool::fine_grain_luts {
   proc place_fine_grain_luts_pblock {pblock_name pblock_fine_grain_property {partition_name ""}} {
     set pblock_slices [list]
     set num_constant_columns ""
-  
+    
     set all_fine_grain_cells [get_cells -hierarchical -filter "(CONSTANT_LUT_ELEMENT == YES || MUX_LUT_ELEMENT == YES || FU_LUT_ELEMENT== YES) && PBLOCK_FINE_GRAIN == $pblock_fine_grain_property"]
     if {[llength $all_fine_grain_cells] == 0} {
       return
@@ -103,7 +106,7 @@ namespace eval ::reconfiguration_tool::fine_grain_luts {
       set constant_LUTs [get_cells -hierarchical -filter "CONSTANT_LUT_ELEMENT == YES && PBLOCK_COLUMN_OFFSET == $column_offset && PBLOCK_FINE_GRAIN == $pblock_fine_grain_property"] 
       if {[llength $constant_LUTs] > 0} {
         set constant_position_list [lsort -integer -unique [get_property constant_position $constant_LUTs]]
-        set LUT_cells [get_constant_LUT_cells $constant_position_list $column_offset]
+        set LUT_cells [get_constant_LUT_cells $constant_position_list $column_offset $pblock_fine_grain_property]
         set used_columns [place_LUTs_in_SLICE_columns $partition_name $LUT_cells $pblock_slices $column_offset $num_constant_columns] 
         if {$num_constant_columns != 0} {
           if {$used_columns > $num_constant_columns} {
@@ -115,11 +118,12 @@ namespace eval ::reconfiguration_tool::fine_grain_luts {
       } else {
         set num_constant_columns 0
       }
+      
       #We place the multiplexers
       set mux_LUTs [get_cells -hierarchical -filter "MUX_LUT_ELEMENT == YES && PBLOCK_COLUMN_OFFSET == $column_offset && PBLOCK_FINE_GRAIN == $pblock_fine_grain_property"]     
       if {[llength $mux_LUTs] > 0} {
         set mux_position_list [lsort -integer -unique [get_property mux_position $mux_LUTs]]        
-        set LUT_cells [get_mux_LUT_cells $mux_position_list $column_offset]        
+        set LUT_cells [get_mux_LUT_cells $mux_position_list $column_offset $pblock_fine_grain_property]        
         set used_columns [place_LUTs_in_SLICE_columns $partition_name $LUT_cells $pblock_slices [expr $column_offset + $num_constant_columns] $num_mux_columns]   
         if {$num_mux_columns != 0} {
           if {$used_columns > $num_mux_columns} {
@@ -131,12 +135,13 @@ namespace eval ::reconfiguration_tool::fine_grain_luts {
       } else {
         set num_mux_columns 0
       } 
+
       #We place the FU
       set prohibited_sites [prohibited_FU_sites $pblock_name]
       set FU_LUTs [get_cells -hierarchical -filter "FU_LUT_ELEMENT == YES && PBLOCK_COLUMN_OFFSET == $column_offset && PBLOCK_FINE_GRAIN == $pblock_fine_grain_property"]   
       if {[llength $FU_LUTs] > 0} {
         set FU_position_list [lsort -integer -unique [get_property FU_position $FU_LUTs]]
-        set LUT_cells [get_FU_LUT_cells $FU_position_list $column_offset]
+        set LUT_cells [get_FU_LUT_cells $FU_position_list $column_offset $pblock_fine_grain_property]
         set used_columns [place_LUTs_in_SLICE_columns $partition_name $LUT_cells $pblock_slices [expr $column_offset + $num_constant_columns + $num_mux_columns] $num_FU_columns $prohibited_sites]  
         if {$num_FU_columns != 0} {
           if {$used_columns > $num_FU_columns} {
@@ -262,10 +267,10 @@ namespace eval ::reconfiguration_tool::fine_grain_luts {
   # Return Value:
   #   list with all the cell that are used to form constants with LUTs
   ########################################################################################  
-  proc get_constant_LUT_cells {constant_position_list column_offset} {
+  proc get_constant_LUT_cells {constant_position_list column_offset pblock_location} {
     set constant_LUT_cells [list]
     foreach position $constant_position_list {
-      set constant_LUT_cells [concat $constant_LUT_cells [lsort -dictionary [get_cells -hierarchical -filter "constant_position == $position && PBLOCK_COLUMN_OFFSET == $column_offset"]]]
+      set constant_LUT_cells [concat $constant_LUT_cells [lsort -dictionary [get_cells -hierarchical -filter "constant_position == $position && PBLOCK_COLUMN_OFFSET == $column_offset && PBLOCK_FINE_GRAIN == $pblock_location"]]]
     }
     return $constant_LUT_cells
   }  
@@ -281,10 +286,10 @@ namespace eval ::reconfiguration_tool::fine_grain_luts {
   # Return Value:
   #   list with all the cell that are used to form muxes with LUTs
   ########################################################################################  
-  proc get_mux_LUT_cells {mux_position_list column_offset} {
+  proc get_mux_LUT_cells {mux_position_list column_offset pblock_location} {
     set mux_LUT_cells [list]
     foreach position $mux_position_list {
-      set mux_LUT_cells [concat $mux_LUT_cells [lsort -dictionary [get_cells -hierarchical -filter "mux_position == $position && PBLOCK_COLUMN_OFFSET == $column_offset"]]]
+      set mux_LUT_cells [concat $mux_LUT_cells [lsort -dictionary [get_cells -hierarchical -filter "mux_position == $position && PBLOCK_COLUMN_OFFSET == $column_offset && PBLOCK_FINE_GRAIN == $pblock_location"]]]
     }
     return $mux_LUT_cells
   }  
@@ -300,10 +305,10 @@ namespace eval ::reconfiguration_tool::fine_grain_luts {
   # Return Value:
   #   list with all the cell that are used to form muxes with LUTs
   ########################################################################################  
-  proc get_FU_LUT_cells {FU_position_list column_offset} {
+  proc get_FU_LUT_cells {FU_position_list column_offset pblock_location} {
     set FU_LUT_cells [list]
     foreach position $FU_position_list {
-      set FU_LUT_cells [concat $FU_LUT_cells [lsort -dictionary [get_cells -hierarchical -filter "fu_position == $position && PBLOCK_COLUMN_OFFSET == $column_offset"]]]
+      set FU_LUT_cells [concat $FU_LUT_cells [lsort -dictionary [get_cells -hierarchical -filter "fu_position == $position && PBLOCK_COLUMN_OFFSET == $column_offset && PBLOCK_FINE_GRAIN == $pblock_location"]]]
     }
     return $FU_LUT_cells
   }  
