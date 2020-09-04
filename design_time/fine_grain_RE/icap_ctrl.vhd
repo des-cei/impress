@@ -112,8 +112,8 @@ ENTITY icap_ctrl IS
       Mem_D      : out std_logic_vector (MEM_D_BITS-1 downto 0);
       Mem_Q      : in  std_logic_vector (MEM_D_BITS-1 downto 0)
    );
-   attribute mark_debug : string;
-   attribute mark_debug of Mem_Addr: signal is "true";
+   -- attribute mark_debug : string;
+   -- attribute mark_debug of Mem_Addr: signal is "true";
 END ENTITY;
 
 
@@ -160,11 +160,11 @@ ARCHITECTURE series7_noreadback OF icap_ctrl IS
 
 
     --attribute mark_debug : string;
-    attribute mark_debug of icap_ce: signal is "false";
-    attribute mark_debug of icap_mode: signal is "false";
-    attribute mark_debug of icap_write: signal is "false";
-    attribute mark_debug of icap_i_bitswap: signal is "false";
-    attribute mark_debug of icap_o_bitswap: signal is "false";
+    -- attribute mark_debug of icap_ce: signal is "false";
+    -- attribute mark_debug of icap_mode: signal is "false";
+    -- attribute mark_debug of icap_write: signal is "false";
+    -- attribute mark_debug of icap_i_bitswap: signal is "false";
+    -- attribute mark_debug of icap_o_bitswap: signal is "false";
 BEGIN
 
 
@@ -235,16 +235,16 @@ MAIN_PROC : process (Clk) is
    variable n : integer;
    
    --attribute mark_debug : string;
-   attribute mark_debug of cfg_const_s: variable is "false";
-   attribute mark_debug of height_s: variable is "true";
-   attribute mark_debug of reconfiguration_element_s: variable is "true";
-   attribute mark_debug of state: variable is "true";
-   attribute mark_debug of frame_addr_s: variable is "true";
-   attribute mark_debug of cfg_mux_s: variable is "false";
-   attribute mark_debug of cfg_FU_s: variable is "true";
-   attribute mark_debug of i: variable is "true";
-   attribute mark_debug of c: variable is "true";
-   attribute mark_debug of h: variable is "true";
+   -- attribute mark_debug of cfg_const_s: variable is "false";
+   -- attribute mark_debug of height_s: variable is "true";
+   -- attribute mark_debug of reconfiguration_element_s: variable is "true";
+   -- attribute mark_debug of state: variable is "true";
+   -- attribute mark_debug of frame_addr_s: variable is "true";
+   -- attribute mark_debug of cfg_mux_s: variable is "false";
+   -- attribute mark_debug of cfg_FU_s: variable is "true";
+   -- attribute mark_debug of i: variable is "true";
+   -- attribute mark_debug of c: variable is "true";
+   -- attribute mark_debug of h: variable is "true";
    
    
 begin

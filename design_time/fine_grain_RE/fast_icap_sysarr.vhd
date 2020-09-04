@@ -127,16 +127,16 @@ ARCHITECTURE arch_imp OF fast_icap_sysarr IS
    signal cfg_words  : integer range 0 to CFG_W_MAX;
    signal Reconfiguration_element : reconfiguration_t;
    
-   attribute mark_debug : string;
-   attribute mark_debug of mem_en_a: signal is "true";
-   attribute mark_debug of mem_be_a: signal is "true";
-   attribute mark_debug of mem_addr_a: signal is "true";
-   attribute mark_debug of mem_d_a: signal is "true";
-   attribute mark_debug of mem_q_a: signal is "true";
-   attribute mark_debug of mem_en_b: signal is "true";
-   attribute mark_debug of mem_addr_b: signal is "true";
-   attribute mark_debug of mem_d_b: signal is "true";
-   attribute mark_debug of mem_q_b: signal is "true";
+   -- attribute mark_debug : string;
+   -- attribute mark_debug of mem_en_a: signal is "true";
+   -- attribute mark_debug of mem_be_a: signal is "true";
+   -- attribute mark_debug of mem_addr_a: signal is "true";
+   -- attribute mark_debug of mem_d_a: signal is "true";
+   -- attribute mark_debug of mem_q_a: signal is "true";
+   -- attribute mark_debug of mem_en_b: signal is "true";
+   -- attribute mark_debug of mem_addr_b: signal is "true";
+   -- attribute mark_debug of mem_d_b: signal is "true";
+   -- attribute mark_debug of mem_q_b: signal is "true";
    
    
 BEGIN

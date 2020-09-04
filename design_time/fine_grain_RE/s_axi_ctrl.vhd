@@ -91,11 +91,11 @@ ENTITY s_axi_ctrl IS
          -- accept the read data and response information.
       S_AXI_RREADY   : in std_logic
    );
-  attribute mark_debug : string;
-  attribute mark_debug of Cfg: signal is "true";
-  attribute mark_debug of Frame_addr: signal is "true";
-  attribute mark_debug of Cfg_words: signal is "true";
-  attribute mark_debug of Reconfiguration_element: signal is "true";
+  -- attribute mark_debug : string;
+  -- attribute mark_debug of Cfg: signal is "true";
+  -- attribute mark_debug of Frame_addr: signal is "true";
+  -- attribute mark_debug of Cfg_words: signal is "true";
+  -- attribute mark_debug of Reconfiguration_element: signal is "true";
   
 END ENTITY;
 
