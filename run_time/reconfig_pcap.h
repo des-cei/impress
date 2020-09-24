@@ -341,6 +341,6 @@ int PCAP_RAM_write(XDcfg *InstancePtr, u32 *addr_start, u32 addr_end, u32 x0, u3
 *****************************************************************************/
 int PCAP_RAM_read(XDcfg *InstancePtr, u32 **addr_start, u32 x0, u32 y0, u32 xf, u32 yf);
 
-int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *file_name, pblock pblock_list[], u32 num_pblocks, u32 erase_bram);
+int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *file_name, pblock pblock_list[], u32 num_pblocks, u32 erase_bram, u8 stacked_modules);
 
 #endif /* RECONFIG_PCAP_H_ */

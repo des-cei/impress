@@ -2,6 +2,7 @@
 #define IMPRESS_RECONFIGURATION
 
 #include <stdint.h> 
+#include "xil_types.h"
 #include "IMPRESS_reconfiguration_parameters.h"
 
 #define MAX_WORDS_PER_CONSTANT          (((MAX_BITS_PER_CONSTANT - 1) / 32) + 1)
@@ -206,6 +207,25 @@ void change_partition_position(virtual_architecture_t *virtual_architecture, int
 *
 *****************************************************************************/
 int change_partition_element(virtual_architecture_t *virtual_architecture, int x, int y, int num_element);
+/****************************************************************************/
+/**
+*
+* This function is equivalent to change_partition_element but is modified to
+* be more efficient when reconfiguring several RMs that are stacked in the same
+* clock region.
+*
+* @param virtual_architecture:
+* @param x: x coordinate of the virtual architecture matrix
+* @param y: y coordinate of the virtual architecture matrix
+* @param num_element: reconfigurable module position in elements variable
+* @param first_module: value to 1 if this is the first RM to be reconfigured
+* @param last_module: value to 1 if this is the last RM to be reconfigured
+*
+* @return  XST_SUCCESS or XST_FAILURE if the reconfigurable module could
+*           not be reconfigured correctly
+*
+*****************************************************************************/
+
 #if FINE_GRAIN
   /****************************************************************************/
   /**

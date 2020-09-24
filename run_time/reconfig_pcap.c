@@ -395,7 +395,7 @@ int PCAP_RAM_write(XDcfg *InstancePtr, u32 *addr_start, u32 addr_end, u32 x0, u3
 #endif // #ifdef PCAP_TIMING
 
         // Write header data.
-        Xil_DCacheFlush();
+        Xil_DCacheFlushRange(WriteBuffer, Index*4);
         Status = XDcfg_Transfer(InstancePtr, WriteBuffer, Index, (u8*) XDCFG_DMA_INVALID_ADDRESS, 0, XDCFG_NON_SECURE_PCAP_WRITE);
         if (Status != XST_SUCCESS)
         {
@@ -427,7 +427,7 @@ int PCAP_RAM_write(XDcfg *InstancePtr, u32 *addr_start, u32 addr_end, u32 x0, u3
 #endif // #ifdef PCAP_TIMING
 
         // Write the frame data.
-        Xil_DCacheFlush();
+        Xil_DCacheFlushRange(addr_send, TotalWords*4);
         Status = XDcfg_Transfer(InstancePtr, addr_send, TotalWords, (u8*) XDCFG_DMA_INVALID_ADDRESS, 0, XDCFG_NON_SECURE_PCAP_WRITE);
         if (Status != XST_SUCCESS)
         {
@@ -513,7 +513,7 @@ int PCAP_RAM_write(XDcfg *InstancePtr, u32 *addr_start, u32 addr_end, u32 x0, u3
                     }
 
                     // Write header data.
-                    Xil_DCacheFlush();
+                    Xil_DCacheFlushRange(WriteBuffer, Index*4);
                     Status = XDcfg_Transfer(InstancePtr, WriteBuffer, Index, (u8*) XDCFG_DMA_INVALID_ADDRESS, 0, XDCFG_NON_SECURE_PCAP_WRITE);
                     if (Status != XST_SUCCESS)
                     {
@@ -535,7 +535,7 @@ int PCAP_RAM_write(XDcfg *InstancePtr, u32 *addr_start, u32 addr_end, u32 x0, u3
                     XDcfg_IntrClear(InstancePtr, (XDCFG_IXR_PCFG_DONE_MASK | XDCFG_IXR_D_P_DONE_MASK | XDCFG_IXR_DMA_DONE_MASK));
 
                     // Write the frame data.
-                    Xil_DCacheFlush();
+                    Xil_DCacheFlushRange(null_frame, TotalWords*4);
                     Status = XDcfg_Transfer(InstancePtr, null_frame, TotalWords, (u8*) XDCFG_DMA_INVALID_ADDRESS, 0, XDCFG_NON_SECURE_PCAP_WRITE);
                     if (Status != XST_SUCCESS)
                     {
@@ -584,7 +584,7 @@ int PCAP_RAM_write(XDcfg *InstancePtr, u32 *addr_start, u32 addr_end, u32 x0, u3
 #endif // #ifdef PCAP_TIMING
 
     // Write the frame data.
-    Xil_DCacheFlush();
+    Xil_DCacheFlushRange(WriteBuffer, Index*4);
     Status = XDcfg_Transfer(InstancePtr, WriteBuffer, Index, (u8*) XDCFG_DMA_INVALID_ADDRESS, 0, XDCFG_NON_SECURE_PCAP_WRITE);
     if (Status != XST_SUCCESS)
     {
@@ -730,7 +730,7 @@ int PCAP_RAM_read(XDcfg *InstancePtr, u32 **addr_start, u32 x0, u32 y0, u32 xf, 
         XTime_GetTime(&time); // Get time count
 #endif // #ifdef PCAP_TIMING
 
-        Xil_DCacheFlush();
+        Xil_DCacheFlushRange(WriteBuffer, Index*4);
         Status = XDcfg_Transfer(InstancePtr, WriteBuffer, Index, (u32*) XDCFG_DMA_INVALID_ADDRESS, 0, XDCFG_NON_SECURE_PCAP_WRITE);
         //Status = XDcfg_Transfer(InstancePtr, WriteBuffer, Index, (u8*) XDCFG_DMA_INVALID_ADDRESS, 0, XDCFG_NON_SECURE_PCAP_WRITE);
         if (Status != XST_SUCCESS)
@@ -764,7 +764,7 @@ int PCAP_RAM_read(XDcfg *InstancePtr, u32 **addr_start, u32 x0, u32 y0, u32 xf, 
 
         Status = XDcfg_Transfer(InstancePtr, (u32*) XDCFG_DMA_INVALID_ADDRESS, TotalWords, *addr_start, TotalWords, XDCFG_NON_SECURE_PCAP_WRITE);
         //Status = XDcfg_Transfer(InstancePtr, (u8*) XDCFG_DMA_INVALID_ADDRESS, TotalWords, 0, TotalWords, XDCFG_NON_SECURE_PCAP_WRITE);
-        Xil_DCacheFlush();
+        Xil_DCacheInvalidateRange(*addr_start, TotalWords*4);
         if (Status != XST_SUCCESS)
         {
         return XST_FAILURE;
@@ -835,52 +835,74 @@ int PCAP_RAM_read(XDcfg *InstancePtr, u32 **addr_start, u32 x0, u32 y0, u32 xf, 
 * reconfigured
 * @param num_pblocks total number of pblocks in the array.
 * @param erase_bram boolean. Erase BRAM contents if required.
+* @param stacked_modules : this value can be used when reconfiguring several
+* modules that are stacked in the same columns. If this parameter is set to 0
+* then the RE has its normal behaviour. If set to 1, then only the readback and
+* bitstream combination is performed. If set to 2 then, only the combination is
+* performed. Lastly, if set to 3 only the combination and the write operation
+* are performed.
+*
 *
 * @return XST_SUCCESS else XST_FAILURE.
 *
 *****************************************************************************/
-int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *file_name, pblock pblock_list[], u32 num_pblocks, u32 erase_bram) {
+int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *file_name, pblock pblock_list[], u32 num_pblocks, u32 erase_bram, u8 stacked_modules) {
 	int initial_clock_region_row, final_clock_region_row, words_per_half_clock_region_without_clock;
 	int first_rows_not_used, first_words_not_used, last_rows_not_used, last_words_not_used;
 	int first_half_bytes_to_move, first_half_first_unused_bytes, last_half_bytes_to_move, last_half_first_unused_bytes;
-	int num_frames, extra_frames;
-	int i, reconfigurable_regions, y, x, frame; //iterable for variables
+	int num_frames, extra_frames, reconfigurable_regions;
+	int i, y, x, frame; //iterable for variables
 	int x0, y0, xf, yf;
-	u32 *previous_PBS_first_addr, *previous_PBS_last_addr, *new_PBS_first_addr, *new_PBS_last_addr;
+	u32 *previous_PBS_first_addr, *new_PBS_first_addr, *new_PBS_last_addr;
 	u32 *pblock_addr[MAX_RECONFIGURABLE_CLOCK_REGIONS];
 	int status;
+	static u32 *previous_PBS_last_addr;
 
 	Xil_AssertNonvoid(InstancePtr != NULL);
 	Xil_AssertNonvoid(InstancePtr->IsReady == XIL_COMPONENT_IS_READY);
 	Xil_AssertNonvoid(addr_start != NULL);
 	Xil_AssertNonvoid(num_pblocks);
+	Xil_AssertNonvoid(stacked_modules <= 3);
+
+	XTime time, transfer; // Elapsed time local variable
+	XTime_SetTime(0);     // Initialize time count
+
+	XTime_GetTime(&time); // Get time count
 
 	//The first thing we do is copying the previous PBS of all the pblocks into the RAM memory
 	previous_PBS_first_addr = addr_start;
-	previous_PBS_last_addr = addr_start;
 	reconfigurable_regions = 0;
-	for (i = 0; i < num_pblocks; i++) {
-		x0 = pblock_list[i].X0;
-		y0 = pblock_list[i].Y0;
-		xf = pblock_list[i].Xf;
-		yf = pblock_list[i].Yf;
+	if (stacked_modules <= 1){
+		previous_PBS_last_addr = addr_start;
+		for (i = 0; i < num_pblocks; i++) {
+			x0 = pblock_list[i].X0;
+			y0 = pblock_list[i].Y0;
+			xf = pblock_list[i].Xf;
+			yf = pblock_list[i].Yf;
 
 
-		initial_clock_region_row = (int) y0 / (int) ROWS_PER_CLOCK_REGION;
-		final_clock_region_row = (int) yf / (int) ROWS_PER_CLOCK_REGION;
+			initial_clock_region_row = (int) y0 / (int) ROWS_PER_CLOCK_REGION;
+			final_clock_region_row = (int) yf / (int) ROWS_PER_CLOCK_REGION;
 
-		for(y = initial_clock_region_row; y <= final_clock_region_row; y++) {
-		  pblock_addr[reconfigurable_regions++] = previous_PBS_last_addr;
-		  if (reconfigurable_regions >= MAX_RECONFIGURABLE_CLOCK_REGIONS) {
-			return XST_FAILURE;
-		  }
-		  //We read the actual content on the FPGA and save it on the RAM memory
-		  status = PCAP_RAM_read(InstancePtr, &previous_PBS_last_addr, x0, y, xf, y);
-		  if (status != XST_SUCCESS) {
-			return XST_FAILURE;
-		  }
+			for(y = initial_clock_region_row; y <= final_clock_region_row; y++) {
+			  pblock_addr[reconfigurable_regions++] = previous_PBS_last_addr;
+			  if (reconfigurable_regions >= MAX_RECONFIGURABLE_CLOCK_REGIONS) {
+				return XST_FAILURE;
+			  }
+			  //We read the actual content on the FPGA and save it on the RAM memory
+			  status = PCAP_RAM_read(InstancePtr, &previous_PBS_last_addr, x0, y, xf, y);
+			  if (status != XST_SUCCESS) {
+				return XST_FAILURE;
+			  }
+			}
 		}
+	} else {
+		pblock_addr[reconfigurable_regions++] = addr_start;
 	}
+
+	XTime_GetTime(&transfer); // Get time count
+	printf("readback time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
+	XTime_GetTime(&time); // Get time count
 
 	pblock_addr[reconfigurable_regions] = previous_PBS_last_addr;
 	if (reconfigurable_regions >= MAX_RECONFIGURABLE_CLOCK_REGIONS) {
@@ -892,6 +914,11 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 	if (new_PBS_last_addr == 0) {
 		return XST_FAILURE;
 	}
+
+	XTime_GetTime(&transfer); // Get time count
+	printf("SD to RAM time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
+	XTime_GetTime(&time); // Get time count
+
 
 	/**
 	* Now we combine the previous bitstream and the new bitstream. The PBS that we are going to
@@ -934,15 +961,15 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 //			  last_half_first_unused_bytes = 0;
 			  last_half_bytes_to_move = (words_per_half_clock_region_without_clock - last_words_not_used) * BYTES_PER_WORD_OF_FRAME;
 			  for(x = x0; x <= xf; x++) {
-          num_frames = fpga[y][x][0] & 0xFFFF;
-          extra_frames = 0;
-          if (fpga[y][x][1] == CLK_TYPE) {
-           extra_frames = num_frames - FRAMES_CLK_INTERCONNECT;
-           num_frames = FRAMES_CLK_INTERCONNECT;
-          } else if (fpga[y][x][1] == CFG_TYPE) {
-           extra_frames = num_frames;
-           num_frames = 0;
-          }
+				  num_frames = fpga[y][x][0] & 0xFFFF;
+				  extra_frames = 0;
+				  if (fpga[y][x][1] == CLK_TYPE) {
+					  extra_frames = num_frames - FRAMES_CLK_INTERCONNECT;
+					  num_frames = FRAMES_CLK_INTERCONNECT;
+				  } else if (fpga[y][x][1] == CFG_TYPE) {
+					  extra_frames = num_frames;
+					  num_frames = 0;
+				  }
 				  for(frame = 0; frame < num_frames; frame++) {
 					  memmove((u32*) ((u32) previous_PBS_first_addr + first_half_first_unused_bytes), new_PBS_first_addr, first_half_bytes_to_move);
 					  new_PBS_first_addr = (u32*) ((u32) new_PBS_first_addr + first_half_bytes_to_move);
@@ -952,7 +979,7 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 					  previous_PBS_first_addr = (u32*) ((u32) previous_PBS_first_addr + words_per_half_clock_region_without_clock * BYTES_PER_WORD_OF_FRAME);
 
 				  }
-          for (frame = 0; frame < extra_frames; frame++) {
+				  for (frame = 0; frame < extra_frames; frame++) {
 					  new_PBS_first_addr =  (u32*) ((u32) new_PBS_first_addr + first_half_bytes_to_move + last_half_bytes_to_move);
 					  previous_PBS_first_addr = (u32*) ((u32) previous_PBS_first_addr + NUM_FRAME_BYTES);
 				  }
@@ -965,22 +992,22 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 			  last_half_first_unused_bytes = (first_words_not_used - words_per_half_clock_region_without_clock) * BYTES_PER_WORD_OF_FRAME;
 			  last_half_bytes_to_move = ((words_per_half_clock_region_without_clock - last_words_not_used) * BYTES_PER_WORD_OF_FRAME) - last_half_first_unused_bytes;
 			  for(x = x0; x <= xf; x++) {
-          num_frames = fpga[y][x][0] & 0xFFFF;
-          extra_frames = 0;
-          if (fpga[y][x][1] == CLK_TYPE) {
-           extra_frames = num_frames - FRAMES_CLK_INTERCONNECT;
-           num_frames = FRAMES_CLK_INTERCONNECT;
-          } else if (fpga[y][x][1] == CFG_TYPE) {
-           extra_frames = num_frames;
-           num_frames = 0;
-          }
+				  num_frames = fpga[y][x][0] & 0xFFFF;
+				  extra_frames = 0;
+				  if (fpga[y][x][1] == CLK_TYPE) {
+					  extra_frames = num_frames - FRAMES_CLK_INTERCONNECT;
+					  num_frames = FRAMES_CLK_INTERCONNECT;
+				  } else if (fpga[y][x][1] == CFG_TYPE) {
+					  extra_frames = num_frames;
+					  num_frames = 0;
+				  }
 				  for(frame = 0; frame < num_frames; frame++) {
 					  previous_PBS_first_addr = (u32*) ((u32) previous_PBS_first_addr + (words_per_half_clock_region_without_clock + CLOCK_WORDS) * BYTES_PER_WORD_OF_FRAME);
 					  memmove((u32*) ((u32) previous_PBS_first_addr + last_half_first_unused_bytes), new_PBS_first_addr, last_half_bytes_to_move);
 					  new_PBS_first_addr = (u32*) ((u32) new_PBS_first_addr + last_half_bytes_to_move);
 					  previous_PBS_first_addr = (u32*) ((u32) previous_PBS_first_addr + words_per_half_clock_region_without_clock * BYTES_PER_WORD_OF_FRAME);
 				  }
-          for (frame = 0; frame < extra_frames; frame++) {
+				  for (frame = 0; frame < extra_frames; frame++) {
 					  new_PBS_first_addr =  (u32*) ((u32) new_PBS_first_addr + last_half_bytes_to_move);
 					  previous_PBS_first_addr = (u32*) ((u32) previous_PBS_first_addr + NUM_FRAME_BYTES);
 				  }
@@ -994,7 +1021,7 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 //			  last_half_first_unused_bytes = 0; //In this case we don't care about this value
 //			  last_half_bytes_to_move = 0;
 			  for(x = x0; x <= xf; x++) {
-          num_frames = fpga[y][x][0] & 0xFFFF;
+				  num_frames = fpga[y][x][0] & 0xFFFF;
 				  extra_frames = 0;
 				  if (fpga[y][x][1] == CLK_TYPE) {
 					  extra_frames = num_frames - FRAMES_CLK_INTERCONNECT;
@@ -1007,8 +1034,9 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 					  memmove((u32*) ((u32) previous_PBS_first_addr + first_half_first_unused_bytes), new_PBS_first_addr, first_half_bytes_to_move);
 					  new_PBS_first_addr = (u32*) ((u32) new_PBS_first_addr + first_half_bytes_to_move);
 					  previous_PBS_first_addr = (u32*) ((u32) previous_PBS_first_addr + NUM_FRAME_BYTES);
+
 				  }
-          for (frame = 0; frame < extra_frames; frame++) {
+				  for (frame = 0; frame < extra_frames; frame++) {
 					  new_PBS_first_addr =  (u32*) ((u32) new_PBS_first_addr + first_half_bytes_to_move);
 					  previous_PBS_first_addr = (u32*) ((u32) previous_PBS_first_addr + NUM_FRAME_BYTES);
 				  }
@@ -1037,25 +1065,36 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 		return XST_FAILURE;
 	}
 
-	//We write the bitstream for each region
-	reconfigurable_regions = 0;
-	for (i = 0; i < num_pblocks; i++) {
-		x0 = pblock_list[i].X0;
-		y0 = pblock_list[i].Y0;
-		xf = pblock_list[i].Xf;
-		yf = pblock_list[i].Yf;
+	XTime_GetTime(&transfer); // Get time count
+	printf("recombination time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
+	XTime_GetTime(&time); // Get time count
 
-		initial_clock_region_row = (int) y0 / (int) ROWS_PER_CLOCK_REGION;
-		final_clock_region_row = (int) yf / (int) ROWS_PER_CLOCK_REGION;
+	if (stacked_modules == 0 || stacked_modules == 3){
+		//We write the bitstream for each region
+		reconfigurable_regions = 0;
+		for (i = 0; i < num_pblocks; i++) {
+			x0 = pblock_list[i].X0;
+			y0 = pblock_list[i].Y0;
+			xf = pblock_list[i].Xf;
+			yf = pblock_list[i].Yf;
 
-		for(y = initial_clock_region_row; y <= final_clock_region_row; y++) {
-		  status = PCAP_RAM_write(InstancePtr, pblock_addr[reconfigurable_regions], (u32) (pblock_addr[reconfigurable_regions + 1]), x0, y, xf, y, erase_bram);
-		  if (status != XST_SUCCESS) {
-			return XST_FAILURE;
-		  }
-		  reconfigurable_regions++;
+			initial_clock_region_row = (int) y0 / (int) ROWS_PER_CLOCK_REGION;
+			final_clock_region_row = (int) yf / (int) ROWS_PER_CLOCK_REGION;
+
+			for(y = initial_clock_region_row; y <= final_clock_region_row; y++) {
+			  status = PCAP_RAM_write(InstancePtr, pblock_addr[reconfigurable_regions], (u32) (pblock_addr[reconfigurable_regions + 1]), x0, y, xf, y, erase_bram);
+			  if (status != XST_SUCCESS) {
+				return XST_FAILURE;
+			  }
+			  reconfigurable_regions++;
+			}
 		}
 	}
+
+	XTime_GetTime(&transfer); // Get time count
+	printf("Write time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
+	XTime_GetTime(&time); // Get time count
+
 
 	return XST_SUCCESS;
 }

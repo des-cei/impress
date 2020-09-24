@@ -171,8 +171,53 @@ int change_partition_element(virtual_architecture_t *virtual_architecture, int x
   pblock_1.Yf = virtual_architecture->partition[x][y].position[Y_POS] + virtual_architecture->partition[x][y].element.element_info->size[HEIGHT_POS] - 1;
   
   enable_PCAP();
-  status = write_subclock_region_PBS(&xCAP_component, (u32*) INITIAL_ADDR_RAM, filename, &pblock_1, 1, 0);
+  status = write_subclock_region_PBS(&xCAP_component, (u32*) INITIAL_ADDR_RAM, filename, &pblock_1, 1, 0, 0);
   
+  return status;
+}
+
+
+int change_partition_element_stacked_modules(virtual_architecture_t *virtual_architecture, int x, int y, int element_info, u8 first_module, u8 last_module) {
+  int status;
+  pblock pblock_1;
+  u8 stacked_modules;
+
+  if (virtual_architecture->partition[x][y].element.element_info == &elements[element_info]) {
+	  return XST_SUCCESS;
+  } else if (element_info == -1) {
+	  //We can use this command to invalidate a partition. This can be used for example when other partition overwrite in the location of this partition
+	  virtual_architecture->partition[x][y].element.element_info = NULL;
+	  return XST_SUCCESS;
+  }
+
+  virtual_architecture->partition[x][y].element.element_info = &elements[element_info];
+
+  char *filename = virtual_architecture->partition[x][y].element.element_info->PBS_name;
+
+  update_partition_location_info(virtual_architecture, x, y);
+
+  #if FINE_GRAIN
+    update_partition_fine_grain_info(virtual_architecture, x, y);
+    reset_fine_grain_elements(virtual_architecture, x, y);
+  #endif
+
+  pblock_1.X0 = virtual_architecture->partition[x][y].position[X_POS];
+  pblock_1.Y0 = virtual_architecture->partition[x][y].position[Y_POS];
+  pblock_1.Xf = virtual_architecture->partition[x][y].position[X_POS] + virtual_architecture->partition[x][y].element.element_info->size[WIDTH_POS] - 1;
+  pblock_1.Yf = virtual_architecture->partition[x][y].position[Y_POS] + virtual_architecture->partition[x][y].element.element_info->size[HEIGHT_POS] - 1;
+
+  enable_PCAP();
+  if (first_module == 1 && last_module == 0) {
+	  stacked_modules = 1;
+  } else if (first_module == 0 && last_module == 0) {
+	  stacked_modules = 2;
+  } else if (first_module == 0 && last_module == 1) {
+	  stacked_modules = 3;
+  } else {
+	  stacked_modules = 0;
+  }
+  status = write_subclock_region_PBS(&xCAP_component, (u32*) INITIAL_ADDR_RAM, filename, &pblock_1, 1, 0, stacked_modules);
+
   return status;
 }
 
