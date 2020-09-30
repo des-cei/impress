@@ -864,10 +864,10 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 	Xil_AssertNonvoid(num_pblocks);
 	Xil_AssertNonvoid(stacked_modules <= 3);
 
-	XTime time, transfer; // Elapsed time local variable
-	XTime_SetTime(0);     // Initialize time count
-
-	XTime_GetTime(&time); // Get time count
+	// XTime time, transfer; // Elapsed time local variable
+	// XTime_SetTime(0);     // Initialize time count
+  // 
+	// XTime_GetTime(&time); // Get time count
 
 	//The first thing we do is copying the previous PBS of all the pblocks into the RAM memory
 	previous_PBS_first_addr = addr_start;
@@ -900,9 +900,9 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 		pblock_addr[reconfigurable_regions++] = addr_start;
 	}
 
-	XTime_GetTime(&transfer); // Get time count
-	printf("readback time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
-	XTime_GetTime(&time); // Get time count
+	// XTime_GetTime(&transfer); // Get time count
+	// printf("readback time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
+	// XTime_GetTime(&time); // Get time count
 
 	pblock_addr[reconfigurable_regions] = previous_PBS_last_addr;
 	if (reconfigurable_regions >= MAX_RECONFIGURABLE_CLOCK_REGIONS) {
@@ -915,9 +915,9 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 		return XST_FAILURE;
 	}
 
-	XTime_GetTime(&transfer); // Get time count
-	printf("SD to RAM time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
-	XTime_GetTime(&time); // Get time count
+	// XTime_GetTime(&transfer); // Get time count
+	// printf("SD to RAM time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
+	// XTime_GetTime(&time); // Get time count
 
 
 	/**
@@ -1065,9 +1065,9 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 		return XST_FAILURE;
 	}
 
-	XTime_GetTime(&transfer); // Get time count
-	printf("recombination time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
-	XTime_GetTime(&time); // Get time count
+	// XTime_GetTime(&transfer); // Get time count
+	// printf("recombination time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
+	// XTime_GetTime(&time); // Get time count
 
 	if (stacked_modules == 0 || stacked_modules == 3){
 		//We write the bitstream for each region
@@ -1091,9 +1091,9 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 		}
 	}
 
-	XTime_GetTime(&transfer); // Get time count
-	printf("Write time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
-	XTime_GetTime(&time); // Get time count
+	// XTime_GetTime(&transfer); // Get time count
+	// printf("Write time:  %12.3f us (%10.0f cycles @ %7.3f MHz)\n", (float)(transfer-time)/(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)*1000000, (float)(transfer-time), (float)(XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ/2)/1000000);
+	// XTime_GetTime(&time); // Get time count
 
 
 	return XST_SUCCESS;
