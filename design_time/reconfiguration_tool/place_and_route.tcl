@@ -53,7 +53,9 @@ namespace eval ::reconfiguration_tool::place_and_route {
     set reconfigurable_resource_tiles [get_tiles -of_objects [get_sites -of_objects [get_pblocks -filter "NAME != pblock_no_placement"]]]
     set x_coordinate [lsort -unique -increasing -integer [get_property COLUMN $reconfigurable_resource_tiles]]
     set y_coordinate [lsort -unique -increasing -integer [get_property ROW $reconfigurable_resource_tiles]]
-    set reconfigurable_INT_and_resource_tiles [get_tiles -filter "COLUMN <= [lindex $x_coordinate end] && COLUMN >= [lindex $x_coordinate 0] && ROW <= [lindex $y_coordinate end] && ROW >= [lindex $y_coordinate 0]"]
+    set filter_reconfigurable_tiles "COLUMN <= [lindex $x_coordinate end] && COLUMN >= [lindex $x_coordinate 0] && ROW <= [lindex $y_coordinate end] && ROW >= [lindex $y_coordinate 0]"
+    set filter_not_reconfigurable_tiles "COLUMN > [lindex $x_coordinate end] || COLUMN < [lindex $x_coordinate 0] || ROW > [lindex $y_coordinate end] || ROW < [lindex $y_coordinate 0]"
+    set reconfigurable_INT_and_resource_tiles [get_tiles -filter $filter_reconfigurable_tiles]
     set reconfigurable_nodes [lsort -unique [get_nodes -downhill -uphill -of_objects $reconfigurable_INT_and_resource_tiles -filter {COST_CODE_NAME != GLOBAL}]]
     # BRAM cascade nodes need to be treated in a special way. The reason for this is 
     # that these nodes are very long and can have multiple destinations (some inside the 
@@ -72,9 +74,11 @@ namespace eval ::reconfiguration_tool::place_and_route {
     set max_y [expr [lindex $y_coordinate end] + $extended_tiles_length]
     set min_x [expr [lindex $x_coordinate 0] - $extended_tiles_length]
     set min_y [expr [lindex $y_coordinate 0] - $extended_tiles_length]
-    set all_tiles [get_tiles -filter "INT_TILE_X < $max_x && INT_TILE_X > $min_x && INT_TILE_Y < $max_y && INT_TILE_Y > $min_y"]
+    # set all_tiles [get_tiles -filter "INT_TILE_X < $max_x && INT_TILE_X > $min_x && INT_TILE_Y < $max_y && INT_TILE_Y > $min_y"]
+    set filter_extended_tiles "INT_TILE_X < $max_x && INT_TILE_X > $min_x && INT_TILE_Y < $max_y && INT_TILE_Y > $min_y"
     
-    set tiles_outside_pblock [::struct::set difference $all_tiles $reconfigurable_INT_and_resource_tiles] 
+    # set tiles_outside_pblock [::struct::set difference $all_tiles $reconfigurable_INT_and_resource_tiles] 
+    set tiles_outside_pblock [get_tiles -filter "($filter_extended_tiles) && ($filter_not_reconfigurable_tiles)"]
     set rest_of_all_nodes [lsort -unique [get_nodes -downhill -uphill -of_objects $tiles_outside_pblock -filter {COST_CODE_NAME != GLOBAL}]]
 
     set interface_nodes [::struct::set  difference [::struct::set intersect $reconfigurable_nodes $rest_of_all_nodes] $exception_BRAM_nodes]
@@ -513,8 +517,12 @@ namespace eval ::reconfiguration_tool::place_and_route {
     set non_reconfigurable_global_nets [struct::set difference $all_global_nets $reconfigurable_global_nets]
     set unrouted_nets [concat $local_nets_using_global_nets $non_reconfigurable_global_nets]
     if {[llength $unrouted_nets] != 0} {
+      # This line is necessary when impress is called from a script. For reasons I dont know, vivado does not 
+      # like the command struct::set difference when called from a script. Probably it looses soma hidden 
+      # information of the variable. 
+      set unrouted_nets [get_nets $unrouted_nets]
       route_design -nets $unrouted_nets
-    }    
+    }     
   
   }
   
