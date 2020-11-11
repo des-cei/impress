@@ -50,7 +50,7 @@ namespace eval ::reconfiguration_tool::place_and_route {
   #   it returns a list with the nodes that cross the reconfigurable regions
   ########################################################################################
   proc get_fence_nodes {} {
-    set reconfigurable_resource_tiles [get_tiles -of_objects [get_sites -of_objects [get_pblocks -filter "NAME != pblock_no_placement"]]]
+    set reconfigurable_resource_tiles [get_tiles -of_objects [get_sites -of_objects [get_pblocks -filter "NAME != pblock_no_placement && NAME !~ pblock_fine_grain_*"]]]
     set x_coordinate [lsort -unique -increasing -integer [get_property COLUMN $reconfigurable_resource_tiles]]
     set y_coordinate [lsort -unique -increasing -integer [get_property ROW $reconfigurable_resource_tiles]]
     set filter_reconfigurable_tiles "COLUMN <= [lindex $x_coordinate end] && COLUMN >= [lindex $x_coordinate 0] && ROW <= [lindex $y_coordinate end] && ROW >= [lindex $y_coordinate 0]"
