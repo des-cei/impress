@@ -592,12 +592,13 @@ namespace eval ::reconfiguration_tool::interface {
           gets $fileId line
           set line [string trim $line]
           while {$line != "end_local_nets"} {
-            regexp {(\S+)\s+(.+)} [string trim $line] -> name direction
-            if {$direction ni $interface_directions} {
-              lappend interface_directions $direction
-              set ${direction}_list {}
-            } 
-            lappend ${direction}_list $name
+            if {[regexp {(\S+)\s+(.+)} [string trim $line] -> name direction] == 1} {
+              if {$direction ni $interface_directions} {
+                lappend interface_directions $direction
+                set ${direction}_list {}
+              } 
+              lappend ${direction}_list $name
+            }
             if {[gets $fileId line] == -1} {
               error "error parsing interface file: $interface_file -> end_local_nets not found"
             }
