@@ -343,7 +343,7 @@ int PCAP_RAM_write(XDcfg *InstancePtr, u32 *addr_start, u32 addr_end, u32 x0, u3
 
     // ID register
     Packet = PCAP_Type1Write(PCAP_IDCODE) | 1;
-    Data = PCAP_XC7Z020;
+    Data = PCAP_IDCODE_NUMBER;
     WriteBuffer[Index++] = Packet;
     WriteBuffer[Index++] = Data;
 

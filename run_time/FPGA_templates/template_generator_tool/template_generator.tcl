@@ -312,6 +312,8 @@ proc write_run_time_description {file_path resource_list row_order_list first_to
   puts $file_h "#define MAX_ROWS    [llength $row_order_list]"
   puts $file_h "#define MAX_COLUMNS $max_column"
   puts $file_h ""
+  puts $file_h "#define PCAP_IDCODE_NUMBER //add the IDCODE of the FPGA here. You can find the IDCODE in the bitstream"
+  puts $file_h ""
   puts $file_h "extern const u32 fpga\[MAX_ROWS\]\[MAX_COLUMNS\]\[2\];"
   puts $file_h ""
   puts $file_h "extern const u32 fpga_bram\[MAX_ROWS\]\[MAX_COLUMNS\];"

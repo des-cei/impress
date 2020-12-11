@@ -36,6 +36,8 @@
 #define GT_TYPE 		8
 
 
+#define PCAP_IDCODE_NUMBER 0x03727093
+
 // ID generation
 #define block(top, row, type)  ((top<<24) | (row<<16) | (type))
 #define content(yes_no, major)  ((yes_no<<16) | (major))

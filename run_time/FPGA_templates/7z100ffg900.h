@@ -23,6 +23,8 @@
 #define MAX_ROWS    7
 #define MAX_COLUMNS 352
 
+#define PCAP_IDCODE_NUMBER 0x03736093
+
 extern const u32 fpga[MAX_ROWS][MAX_COLUMNS][2];
 
 extern const u32 fpga_bram[MAX_ROWS][MAX_COLUMNS];
