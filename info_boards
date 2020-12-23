@@ -1,0 +1,4 @@
+1) when using the fine grain RE add the IDCODE to the properties
+2) Dont forget to configure the PS to the specific board if you are moving a design to a new board.
+3) Generate the FPGA template using template_generator.tcl
+4) Add the IDCODE info to the generated file and add the file to the sdk project
