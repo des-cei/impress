@@ -947,7 +947,7 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 			first_words_not_used = first_rows_not_used * WORDS_PER_ROW_IN_CLOCK_REGION;
 		  }
 		  if(y == final_clock_region_row) {
-			last_rows_not_used = (((initial_clock_region_row + 1) * ROWS_PER_CLOCK_REGION) - 1) - yf;
+			last_rows_not_used = (((final_clock_region_row + 1) * ROWS_PER_CLOCK_REGION) - 1) - yf;
 			last_words_not_used = last_rows_not_used * WORDS_PER_ROW_IN_CLOCK_REGION;
 		  }
 		  /**
