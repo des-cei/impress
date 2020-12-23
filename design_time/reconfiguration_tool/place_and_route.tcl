@@ -75,7 +75,7 @@ namespace eval ::reconfiguration_tool::place_and_route {
     set min_x [expr [lindex $x_coordinate 0] - $extended_tiles_length]
     set min_y [expr [lindex $y_coordinate 0] - $extended_tiles_length]
     # set all_tiles [get_tiles -filter "INT_TILE_X < $max_x && INT_TILE_X > $min_x && INT_TILE_Y < $max_y && INT_TILE_Y > $min_y"]
-    set filter_extended_tiles "INT_TILE_X < $max_x && INT_TILE_X > $min_x && INT_TILE_Y < $max_y && INT_TILE_Y > $min_y"
+    set filter_extended_tiles "COLUMN < $max_x && COLUMN > $min_x && ROW < $max_y && ROW > $min_y"
     
     # set tiles_outside_pblock [::struct::set difference $all_tiles $reconfigurable_INT_and_resource_tiles] 
     set tiles_outside_pblock [get_tiles -filter "($filter_extended_tiles) && ($filter_not_reconfigurable_tiles)"]
