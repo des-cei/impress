@@ -385,20 +385,27 @@ namespace eval ::reconfiguration_tool::utils {
   # in pblocks with more tha one rectangle.
   proc get_edge_INT_tiles {pblock_name {expansion 0}} {
     set pblock [get_pblocks $pblock_name]
+    set rectangle_count [get_property RECTANGLE_COUNT $pblock]
     set tiles_pblock [get_tiles -of_objects [get_sites -of_objects $pblock]]
-    set INT_tiles_pblock [get_tiles -filter {TYPE =~ INT_?} -of_objects $tiles_pblock]
+    if {$rectangle_count == 1} {
+      set rows [lsort -integer -unique [get_property ROW $tiles_pblock]]
+      set columns [lsort -integer -unique [get_property COLUMN $tiles_pblock]]
+      set INT_tiles_pblock [get_tiles -filter "TYPE =~ INT_? && ROW <= [lindex $rows end] && ROW >= [lindex $rows 0] && COLUMN <= [lindex $columns end] && COLUMN >= [lindex $columns 0]" ]
+    } else {
+      #TODO there can be problems if the pblock shares the same column as the CFG tile
+      set INT_tiles_pblock [get_tiles -filter {TYPE =~ INT_?} -of_objects $tiles_pblock]
+    }
     set X_properties [lsort -integer -unique [get_property INT_TILE_X $INT_tiles_pblock]]
     set Y_properties [lsort -integer -unique -decreasing [get_property INT_TILE_Y $INT_tiles_pblock]]
     set NORTH_INT_tiles {}
     set SOUTH_INT_tiles {}
     set EAST_INT_tiles {}
     set WEST_INT_tiles {}
-    set rectangle_count [get_property RECTANGLE_COUNT $pblock]
     if {$rectangle_count == 1 && $expansion == 0} {
-      set NORTH_INT_tiles [get_tiles -filter "TYPE =~ INT_? && INT_TILE_Y == [lindex $Y_properties end]" -of_objects $tiles_pblock]
-      set SOUTH_INT_tiles [get_tiles -filter "TYPE =~ INT_? && INT_TILE_Y == [lindex $Y_properties 0]" -of_objects $tiles_pblock]
-      set EAST_INT_tiles [lsort -dictionary -increasing [get_tiles -filter "TYPE =~ INT_? && INT_TILE_X == [lindex $X_properties end]" -of_objects $tiles_pblock]]
-      set WEST_INT_tiles [lsort -dictionary -increasing [get_tiles -filter "TYPE =~ INT_? && INT_TILE_X == [lindex $X_properties 0]" -of_objects $tiles_pblock]]
+      set NORTH_INT_tiles [get_tiles -filter "TYPE =~ INT_? && INT_TILE_Y == [lindex $Y_properties end]" -of_objects $INT_tiles_pblock]
+      set SOUTH_INT_tiles [get_tiles -filter "TYPE =~ INT_? && INT_TILE_Y == [lindex $Y_properties 0]" -of_objects $INT_tiles_pblock]
+      set EAST_INT_tiles [lsort -dictionary -increasing [get_tiles -filter "TYPE =~ INT_? && INT_TILE_X == [lindex $X_properties end]" -of_objects $INT_tiles_pblock]]
+      set WEST_INT_tiles [lsort -dictionary -increasing [get_tiles -filter "TYPE =~ INT_? && INT_TILE_X == [lindex $X_properties 0]" -of_objects $INT_tiles_pblock]]
     } else {
       foreach X_property $X_properties {
         set column_tiles [get_tiles -filter "TYPE =~ INT_? && INT_TILE_X == $X_property" -of_objects $INT_tiles_pblock]
