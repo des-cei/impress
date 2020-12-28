@@ -754,7 +754,13 @@ namespace eval ::reconfiguration_tool::netlist {
       set low_y_coordenate_relative [expr $low_y_coordenate % $num_rows_in_clock_region]
       set rows_in_upper_part [expr ($num_rows_in_clock_region / 2) - $high_y_coordenate_relative]
       set rows_in_lower_part [expr $low_y_coordenate_relative - (($num_rows_in_clock_region / 2) - 1)]
-      set min_rows [expr min($rows_in_upper_part,$rows_in_lower_part)]
+      if {$rows_in_upper_part == 0} {
+        set min_rows $rows_in_lower_part
+      } elseif {$rows_in_lower_part == 0} {
+        set min_rows $rows_in_upper_part
+      } else {
+        set min_rows [expr min($rows_in_upper_part,$rows_in_lower_part)]
+      }
       
       # How many FF with differenct clock can we place by row (i.e. 2 for series 7)
       set max_FF_per_row 1 ; #Sometime Vivado throws placement errors when I have this to 2 i dont know why...
