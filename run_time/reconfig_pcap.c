@@ -967,8 +967,8 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 					  extra_frames = num_frames - FRAMES_CLK_INTERCONNECT;
 					  num_frames = FRAMES_CLK_INTERCONNECT;
 				  } else if (fpga[y][x][1] == CFG_TYPE) {
-					  extra_frames = num_frames;
-					  num_frames = 0;
+            extra_frames = num_frames - FRAMES_CLK_INTERCONNECT;
+					  num_frames = FRAMES_CLK_INTERCONNECT;
 				  }
 				  for(frame = 0; frame < num_frames; frame++) {
 					  memmove((u32*) ((u32) previous_PBS_first_addr + first_half_first_unused_bytes), new_PBS_first_addr, first_half_bytes_to_move);
@@ -998,8 +998,8 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 					  extra_frames = num_frames - FRAMES_CLK_INTERCONNECT;
 					  num_frames = FRAMES_CLK_INTERCONNECT;
 				  } else if (fpga[y][x][1] == CFG_TYPE) {
-					  extra_frames = num_frames;
-					  num_frames = 0;
+            extra_frames = num_frames - FRAMES_CLK_INTERCONNECT;
+					  num_frames = FRAMES_CLK_INTERCONNECT;
 				  }
 				  for(frame = 0; frame < num_frames; frame++) {
 					  previous_PBS_first_addr = (u32*) ((u32) previous_PBS_first_addr + (words_per_half_clock_region_without_clock + CLOCK_WORDS) * BYTES_PER_WORD_OF_FRAME);
@@ -1027,8 +1027,8 @@ int write_subclock_region_PBS(XDcfg *InstancePtr, u32 *addr_start, const char *f
 					  extra_frames = num_frames - FRAMES_CLK_INTERCONNECT;
 					  num_frames = FRAMES_CLK_INTERCONNECT;
 				  } else if (fpga[y][x][1] == CFG_TYPE) {
-					  extra_frames = num_frames;
-					  num_frames = 0;
+					  extra_frames = num_frames - FRAMES_CLK_INTERCONNECT;
+				    num_frames = FRAMES_CLK_INTERCONNECT;
 				  }
 				  for(frame = 0; frame < num_frames; frame++) {
 					  memmove((u32*) ((u32) previous_PBS_first_addr + first_half_first_unused_bytes), new_PBS_first_addr, first_half_bytes_to_move);
