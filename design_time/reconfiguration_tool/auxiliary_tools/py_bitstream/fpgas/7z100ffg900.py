@@ -47,4 +47,4 @@ table = 4 * [
 ]
 
 # How rows are arranged in the bitstream.  0 = bottom row
-bitstream_order = [3, 4, 5, 6,   2, 1, 0]
+bitstream_order = [6, 5, 4, 3,   2, 1, 0]
