@@ -116,6 +116,8 @@ proc generate_template {file_path {device ""}} {
   }
   
   write_py_bitstream_description $file_path $FPGA_resources $common_row_resources $bitstream_order
+  
+  puts "Template generated"
 }
 
 
