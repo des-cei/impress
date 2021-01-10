@@ -1,0 +1,1 @@
+1) Right now if a RM is implemented in one clock region, then it is not relocatable to a RR that crosses two vertical clock regions. It is necessary to change the PCAP reconfiguration engine to make them relocatable.
