@@ -17,74 +17,77 @@ namespace eval ::reconfiguration_tool::place_and_route {
   namespace export route_global_nets
   
   ########################################################################################
-  # This function returns the fence nodes of a reconfigurable or static design. It 
-  # computes the interface nodes of all the pblocks of the design. 
-  #
-  # Argument Usage:
-  #
-  # Return Value:
-  # It returns all the nodes that form the fence of the design. 
-  ########################################################################################
-  proc get_external_fence_nodes {} {
-    # variable ::reconfiguration_tool::reconfigurable_partition_group_list
-    set fence_nodes {}
-    set pblocks [get_pblocks -filter "NAME != pblock_no_placement"]
-    # foreach pblock $pblocks {
-    #   set fence_nodes [::struct::set union $fence_nodes [get_interface_nodes_pblock $pblock]]
-    # }
-    
-    set fence_nodes [get_fence_nodes]
-    set partition_pins [get_pins -hierarchical -filter {HD.PARTPIN_LOCS != {}}]
-    set partition_pin_nodes {}
-    foreach pin $partition_pins {
-      set node [get_nodes [get_property HD.PARTPIN_LOCS $pin]]
-      set partition_pin_nodes [concat $partition_pin_nodes $node]
-    }
-    set fence_nodes [::struct::set difference $fence_nodes $partition_pin_nodes]
-    return $fence_nodes
+# This function returns the fence nodes of a reconfigurable or static design. It 
+# computes the interface nodes of all the pblocks of the design. 
+#
+# Argument Usage:
+#
+# Return Value:
+# It returns all the nodes that form the fence of the design. 
+########################################################################################
+proc get_external_fence_nodes {} {
+  # variable ::reconfiguration_tool::reconfigurable_partition_group_list
+  set fence_nodes {}
+  set pblocks [get_pblocks -filter "NAME != pblock_no_placement && NAME !~ pblock_fine_grain_*"]
+  foreach pblock $pblocks {
+    set fence_nodes [::struct::set union $fence_nodes [get_fence_nodes $pblock]]
   }
   
-  ########################################################################################
-  # This function calculates all the nodes that cross the reconfigurable regions
-  # Return Value:
-  #   it returns a list with the nodes that cross the reconfigurable regions
-  ########################################################################################
-  proc get_fence_nodes {} {
-    set reconfigurable_resource_tiles [get_tiles -of_objects [get_sites -of_objects [get_pblocks -filter "NAME != pblock_no_placement && NAME !~ pblock_fine_grain_*"]]]
-    set x_coordinate [lsort -unique -increasing -integer [get_property COLUMN $reconfigurable_resource_tiles]]
-    set y_coordinate [lsort -unique -increasing -integer [get_property ROW $reconfigurable_resource_tiles]]
-    set filter_reconfigurable_tiles "COLUMN <= [lindex $x_coordinate end] && COLUMN >= [lindex $x_coordinate 0] && ROW <= [lindex $y_coordinate end] && ROW >= [lindex $y_coordinate 0]"
-    set filter_not_reconfigurable_tiles "COLUMN > [lindex $x_coordinate end] || COLUMN < [lindex $x_coordinate 0] || ROW > [lindex $y_coordinate end] || ROW < [lindex $y_coordinate 0]"
-    set reconfigurable_INT_and_resource_tiles [get_tiles -filter $filter_reconfigurable_tiles]
-    set reconfigurable_nodes [lsort -unique [get_nodes -downhill -uphill -of_objects $reconfigurable_INT_and_resource_tiles -filter {COST_CODE_NAME != GLOBAL}]]
-    # BRAM cascade nodes need to be treated in a special way. The reason for this is 
-    # that these nodes are very long and can have multiple destinations (some inside the 
-    # pblock and some outside). Because these nodes are mandatory to be used when Vivado 
-    # cascade BRAMs it is necessary to make them available for reconfigurable designs.  
-    # Therefore we allow nodes in the pblock that can go from the inside to another 
-    # place of the pblock but also outside the pblock. However we dont allow nodes that 
-    # nodes that go from the outside to the inside no matter what. Doing that we ensure 
-    # that no route can go outside the pblock and return back inside of it. 
-    set exception_BRAM_nodes [lsort -unique [get_nodes -downhill -of_objects $reconfigurable_INT_and_resource_tiles -filter {NAME =~ *BRAM_CASCOUT*}]]
-    
-    # set all_tiles [get_tiles *]
-    #we only select part of the tiles to increase the speed in large FPGAs 
-    set extended_tiles_length 80
-    set max_x [expr [lindex $x_coordinate end] + $extended_tiles_length]
-    set max_y [expr [lindex $y_coordinate end] + $extended_tiles_length]
-    set min_x [expr [lindex $x_coordinate 0] - $extended_tiles_length]
-    set min_y [expr [lindex $y_coordinate 0] - $extended_tiles_length]
-    # set all_tiles [get_tiles -filter "INT_TILE_X < $max_x && INT_TILE_X > $min_x && INT_TILE_Y < $max_y && INT_TILE_Y > $min_y"]
-    set filter_extended_tiles "COLUMN < $max_x && COLUMN > $min_x && ROW < $max_y && ROW > $min_y"
-    
-    # set tiles_outside_pblock [::struct::set difference $all_tiles $reconfigurable_INT_and_resource_tiles] 
-    set tiles_outside_pblock [get_tiles -filter "($filter_extended_tiles) && ($filter_not_reconfigurable_tiles)"]
-    set rest_of_all_nodes [lsort -unique [get_nodes -downhill -uphill -of_objects $tiles_outside_pblock -filter {COST_CODE_NAME != GLOBAL}]]
-
-    set interface_nodes [::struct::set  difference [::struct::set intersect $reconfigurable_nodes $rest_of_all_nodes] $exception_BRAM_nodes]
-    
-    return $interface_nodes
+  set partition_pins [get_pins -hierarchical -filter {HD.PARTPIN_LOCS != {}}]
+  set partition_pin_nodes {}
+  foreach pin $partition_pins {
+    set node [get_nodes [get_property HD.PARTPIN_LOCS $pin]]
+    set partition_pin_nodes [concat $partition_pin_nodes $node]
   }
+  set fence_nodes [::struct::set difference $fence_nodes $partition_pin_nodes]
+  return $fence_nodes
+}
+
+########################################################################################
+# This function calculates all the nodes that cross the reconfigurable region of the 
+# given pblock. 
+# Argument Usage:
+# pblock_name: name of the pblock that is going to be analyzed. 
+#
+# Return Value:
+#   it returns a list with the nodes that cross the reconfigurable region
+########################################################################################
+proc get_fence_nodes {pblock_name} {
+  set reconfigurable_resource_tiles [get_tiles -of_objects [get_sites -of_objects [get_pblocks $pblock_name]]]
+  set x_coordinate [lsort -unique -increasing -integer [get_property COLUMN $reconfigurable_resource_tiles]]
+  set y_coordinate [lsort -unique -increasing -integer [get_property ROW $reconfigurable_resource_tiles]]
+  set filter_reconfigurable_tiles "COLUMN <= [lindex $x_coordinate end] && COLUMN >= [lindex $x_coordinate 0] && ROW <= [lindex $y_coordinate end] && ROW >= [lindex $y_coordinate 0]"
+  set filter_not_reconfigurable_tiles "COLUMN > [lindex $x_coordinate end] || COLUMN < [lindex $x_coordinate 0] || ROW > [lindex $y_coordinate end] || ROW < [lindex $y_coordinate 0]"
+  set reconfigurable_INT_and_resource_tiles [get_tiles -filter $filter_reconfigurable_tiles]
+  set reconfigurable_nodes [lsort -unique [get_nodes -downhill -uphill -of_objects $reconfigurable_INT_and_resource_tiles -filter {COST_CODE_NAME != GLOBAL}]]
+  # BRAM cascade nodes need to be treated in a special way. The reason for this is 
+  # that these nodes are very long and can have multiple destinations (some inside the 
+  # pblock and some outside). Because these nodes are mandatory to be used when Vivado 
+  # cascade BRAMs it is necessary to make them available for reconfigurable designs.  
+  # Therefore we allow nodes in the pblock that can go from the inside to another 
+  # place of the pblock but also outside the pblock. However we dont allow nodes that 
+  # nodes that go from the outside to the inside no matter what. Doing that we ensure 
+  # that no route can go outside the pblock and return back inside of it. 
+  set exception_BRAM_nodes [lsort -unique [get_nodes -downhill -of_objects $reconfigurable_INT_and_resource_tiles -filter {NAME =~ *BRAM_CASCOUT*}]]
+  
+  # set all_tiles [get_tiles *]
+  #we only select part of the tiles to increase the speed in large FPGAs 
+  set extended_tiles_length 80
+  set max_x [expr [lindex $x_coordinate end] + $extended_tiles_length]
+  set max_y [expr [lindex $y_coordinate end] + $extended_tiles_length]
+  set min_x [expr [lindex $x_coordinate 0] - $extended_tiles_length]
+  set min_y [expr [lindex $y_coordinate 0] - $extended_tiles_length]
+  # set all_tiles [get_tiles -filter "INT_TILE_X < $max_x && INT_TILE_X > $min_x && INT_TILE_Y < $max_y && INT_TILE_Y > $min_y"]
+  set filter_extended_tiles "COLUMN < $max_x && COLUMN > $min_x && ROW < $max_y && ROW > $min_y"
+  
+  # set tiles_outside_pblock [::struct::set difference $all_tiles $reconfigurable_INT_and_resource_tiles] 
+  set tiles_outside_pblock [get_tiles -filter "($filter_extended_tiles) && ($filter_not_reconfigurable_tiles)"]
+  set rest_of_all_nodes [lsort -unique [get_nodes -downhill -uphill -of_objects $tiles_outside_pblock -filter {COST_CODE_NAME != GLOBAL}]]
+
+  set interface_nodes [::struct::set  difference [::struct::set intersect $reconfigurable_nodes $rest_of_all_nodes] $exception_BRAM_nodes]
+  
+  return $interface_nodes
+}
 
 
   ########################################################################################
