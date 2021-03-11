@@ -16,12 +16,12 @@ use UNISIM.VComponents.all;
 entity lut_FU is
     generic (
         NUM_BLOCKS_4_BITS : positive := 1;
-        POSITION : positive;
+        POSITION : positive := 1;
         FU_COLUMNS : natural := 0;
         COLUMN_OFFSET : integer := 0;
         PBLOCK : string := "";
-        INIT1 : bit_vector (63 downto 0) := x"0000_0000_0000_0000"; 
-        INIT2 : bit_vector (63 downto 0) := x"AAAA_AAAA_AAAA_AAAA" 
+        INIT1 : bit_vector (63 downto 0) := x"0F0F_F0F0_F0F0_0000"; 
+        INIT2 : bit_vector (63 downto 0) := x"F0F0_F0F0_F0F0_F0F0" 
     );
     port (
         -- carry_in : in std_logic;
