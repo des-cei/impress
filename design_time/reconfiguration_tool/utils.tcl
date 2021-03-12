@@ -115,7 +115,7 @@ namespace eval ::reconfiguration_tool::utils {
       #element that will be deleted in the opt_design command. If we don't do this there are problems 
       #in the pblock assignation 
       if {([llength $child_cells] == 0) && ([llength $hierarchical_reconfigurable_partition_list] > 0) } {
-        create_cell -reference LUT1 ${cell}/dummy
+        create_cell -reference LUT6 ${cell}/dummy
       }
       set_property HD.RECONFIGURABLE 1 $cell
       create_and_place_pblock $pblock_name $pblock_list

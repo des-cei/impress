@@ -223,7 +223,7 @@ namespace eval ::reconfiguration_tool::fine_grain_luts {
             set LUT_cells [lreplace $LUT_cells 0 0]
           } else {
             set LUT ${parent_cell}fine_dummy_LUT_${slice}_${j}
-            create_cell -reference LUT1 $LUT
+            create_cell -reference LUT6 $LUT
             set LUT_cell [get_cells $LUT]
             # We need to connect a net to the output so that the opt_design does not 
             # unplace the cell. Even if the net is not connected to something the 

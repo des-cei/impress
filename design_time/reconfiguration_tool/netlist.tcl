@@ -347,7 +347,7 @@ namespace eval ::reconfiguration_tool::netlist {
       if {($leaf_cell == "") && ($connected_to_output == 0)} {
         set pin_ref [get_property REF_PIN_NAME $pin]
         set LUT "${cell_name}/${pin_ref}_LUT_inserted"
-        create_cell -reference LUT1 $LUT
+        create_cell -reference LUT6 $LUT
         if {$net == ""} {
           set net_inserted "${cell_name}/${pin_ref}_inserted"
           create_net $net_inserted
@@ -366,7 +366,7 @@ namespace eval ::reconfiguration_tool::netlist {
       set net_name dummy/${pin_name}
       set dummy_LUT_name dummy/dummy_LUT_OUT_${partition_group_name}_${pin_name}
       create_net $net_name
-      create_cell -reference LUT1 $dummy_LUT_name
+      create_cell -reference LUT6 $dummy_LUT_name
       set dummy_LUT_pin [get_pins -of [get_cells $dummy_LUT_name] -filter {DIRECTION == OUT}] 
       connect_net -hierarchical -net $net_name -objects [list $dummy_LUT_pin $pin]
       set_property -quiet -name DONT_TOUCH -value yes -object [get_nets $net_name]
@@ -384,7 +384,7 @@ namespace eval ::reconfiguration_tool::netlist {
       if {($leaf_cell == "") && ($connected_to_input == 0)} {
         set pin_ref [get_property REF_PIN_NAME $pin]
         set LUT "${cell_name}/${pin_ref}_LUT_inserted"
-        create_cell -reference LUT1 $LUT
+        create_cell -reference LUT6 $LUT
         if {$net == ""} {
           set net_inserted "${cell_name}/${pin_ref}_inserted"
           create_net $net_inserted
@@ -399,7 +399,7 @@ namespace eval ::reconfiguration_tool::netlist {
       set net_name dummy/${pin_name}
       set dummy_LUT_name dummy/dummy_LUT_IN_${partition_group_name}_${pin_name}
       create_net $net_name
-      create_cell -reference LUT1 $dummy_LUT_name
+      create_cell -reference LUT6 $dummy_LUT_name
       set dummy_LUT_pin [get_pins -of [get_cells $dummy_LUT_name] -filter {DIRECTION == IN && NAME =~ */I0*}] 
       connect_net -hierarchical -net $net_name -objects [list $dummy_LUT_pin $pin]
       set_property -quiet -name DONT_TOUCH -value yes -object [get_nets $net_name]
@@ -484,7 +484,7 @@ namespace eval ::reconfiguration_tool::netlist {
         set pin_ref [get_property REF_PIN_NAME $pin]
         set net [get_nets -boundary upper -of_objects $pin]
         set LUT "${cell}_${pin_ref}_LUT_inserted"
-        create_cell -reference LUT1 $LUT
+        create_cell -reference LUT6 $LUT
         if {$net == ""} {
           set net_inserted "${cell}_${pin_ref}_inserted"
           create_net $net_inserted
@@ -501,7 +501,7 @@ namespace eval ::reconfiguration_tool::netlist {
       set net_name ${cell}/dummy_net_${pin_name}
       create_net $net_name
       set dummy_LUT_name ${cell}/dummy_LUT_OUT_${pin_name}
-      create_cell -reference LUT1 $dummy_LUT_name
+      create_cell -reference LUT6 $dummy_LUT_name
       set dummy_LUT_pin [get_pins -of [get_cells $dummy_LUT_name] -filter {DIRECTION == OUT}] 
       connect_net -net $net_name -objects [list $dummy_LUT_pin $pin]
       # set FF_name ${cell}/dummy_FF_${pin_name}
