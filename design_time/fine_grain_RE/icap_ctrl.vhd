@@ -159,7 +159,7 @@ ARCHITECTURE series7_noreadback OF icap_ctrl IS
    
 
 
-    --attribute mark_debug : string;
+    -- attribute mark_debug : string;
     -- attribute mark_debug of icap_ce: signal is "false";
     -- attribute mark_debug of icap_mode: signal is "false";
     -- attribute mark_debug of icap_write: signal is "false";
@@ -193,9 +193,9 @@ MAIN_PROC : process (Clk) is
    constant MUX_NUM_ELEMENTS : integer := 100;
    constant MUX_BITS_CFG_ELEMENT : integer := 4;
    constant MUX_WORDS_HEIGHT : integer := 1; 
-   constant FU_NUM_ELEMENTS : integer := 25;
+   constant FU_NUM_ELEMENTS : integer := 50;
    constant FU_BITS_CFG_ELEMENT : integer := 5;
-   constant FU_WORDS_HEIGHT : integer := 4;
+   constant FU_WORDS_HEIGHT : integer := 2;
    
    
    type state_t is (ST_IDLE, ST_HEAD, ST_FETCH, ST_ADDR, ST_DATA, ST_TAIL);
@@ -234,7 +234,7 @@ MAIN_PROC : process (Clk) is
    variable m : integer;
    variable n : integer;
    
-   --attribute mark_debug : string;
+   -- attribute mark_debug : string;
    -- attribute mark_debug of cfg_const_s: variable is "false";
    -- attribute mark_debug of height_s: variable is "true";
    -- attribute mark_debug of reconfiguration_element_s: variable is "true";

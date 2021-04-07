@@ -137,12 +137,12 @@ namespace eval ::reconfiguration_tool::fine_grain_luts {
       } 
 
       #We place the FU
-      set prohibited_sites [prohibited_FU_sites $pblock_name]
+      # set prohibited_sites [prohibited_FU_sites $pblock_name]
       set FU_LUTs [get_cells -hierarchical -filter "FU_LUT_ELEMENT == YES && PBLOCK_COLUMN_OFFSET == $column_offset && PBLOCK_FINE_GRAIN == $pblock_fine_grain_property"]   
       if {[llength $FU_LUTs] > 0} {
         set FU_position_list [lsort -integer -unique [get_property FU_position $FU_LUTs]]
         set LUT_cells [get_FU_LUT_cells $FU_position_list $column_offset $pblock_fine_grain_property]
-        set used_columns [place_LUTs_in_SLICE_columns $partition_name $LUT_cells $pblock_slices [expr $column_offset + $num_constant_columns + $num_mux_columns] $num_FU_columns $prohibited_sites]  
+        set used_columns [place_LUTs_in_SLICE_columns $partition_name $LUT_cells $pblock_slices [expr $column_offset + $num_constant_columns + $num_mux_columns] $num_FU_columns]  
         if {$num_FU_columns != 0} {
           if {$used_columns > $num_FU_columns} {
             error "more columns have been used for mux than specified in num_mux_columns parameter"
@@ -306,12 +306,18 @@ namespace eval ::reconfiguration_tool::fine_grain_luts {
   #   list with all the cell that are used to form muxes with LUTs
   ########################################################################################  
   proc get_FU_LUT_cells {FU_position_list column_offset pblock_location} {
-    set FU_LUT_cells [list]
+    set ordered_FU_cells [list]
+    set order_list_position "0 4 1 5 2 6 3 7"
     foreach position $FU_position_list {
-      set FU_LUT_cells [concat $FU_LUT_cells [lsort -dictionary [get_cells -hierarchical -filter "fu_position == $position && PBLOCK_COLUMN_OFFSET == $column_offset && PBLOCK_FINE_GRAIN == $pblock_location"]]]
+      set unordered_FU_cells [lsort -dictionary [get_cells -hierarchical -filter "fu_position == $position && PBLOCK_COLUMN_OFFSET == $column_offset && PBLOCK_FINE_GRAIN == $pblock_location"]]
+      for {set i 0} {$i < [llength $unordered_FU_cells]} {set i [expr $i + 8]} {
+        foreach position $order_list_position {
+          set ordered_FU_cells [concat $ordered_FU_cells [lindex $unordered_FU_cells [expr $i + $position]]]
+        }
+      }
     }
-    return $FU_LUT_cells
-  }  
+    return $ordered_FU_cells
+  } 
   
   ########################################################################################
   # This function returns a list with sublists containing all the SLICE elements of a  

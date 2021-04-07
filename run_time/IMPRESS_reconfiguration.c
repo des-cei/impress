@@ -40,8 +40,8 @@ please set ICAP_CTRL_BASEADDR manually
 #define FU_TYPE                             2
 #define WORDS_PER_CONSTANTS                 13
 #define WORDS_PER_MUX                       13
-#define WORDS_PER_FU                        5
-#define LUTS_PER_CLB						4
+#define WORDS_PER_FU                        10
+#define LUTS_PER_CLB						            4
 
 typedef struct {
   uint32_t frame_address;
@@ -621,12 +621,12 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
     uint32_t frame_address;
     
     initial_column = *column;
-    // If the first row is odd it does not have FU as they have to start from an even row
-    if ((first_row % 2) == 1) first_row++;
-    // If the last row is even it does not have FU as they have to finish in an odd row
-    if ((last_row % 2) == 0) last_row--;
-    first_block_first_clock_row = first_row/2;
-    last_block_last_clock_row = last_row/2;
+    // // If the first row is odd it does not have FU as they have to start from an even row
+    // if ((first_row % 2) == 1) first_row++;
+    // // If the last row is even it does not have FU as they have to finish in an odd row
+    // if ((last_row % 2) == 0) last_row--;
+    first_block_first_clock_row = first_row;///2;
+    last_block_last_clock_row = last_row;///2;
     if (first_clock_row == last_clock_row) {
       first_block_last_clock_row = first_block_first_clock_row;
       last_block_first_clock_row = last_block_last_clock_row;
@@ -643,7 +643,7 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
       if (virtual_architecture->partition[x][y].element.element_info->FU_column_offset[i] != offset) {
         continue;
       }
-      total_blocks_to_send = virtual_architecture->partition[x][y].element.element_info->FU_4_bit_blocks[i];
+      total_blocks_to_send = 2*virtual_architecture->partition[x][y].element.element_info->FU_4_bit_blocks[i];
       j = 0;
       while (total_blocks_to_send > 0) {
         frame_address = obtain_frame_address_of_CLB_column(virtual_architecture, x, y, clock_row_number, (*column));
@@ -995,7 +995,7 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
       virtual_architecture->partition[x][y].element.FU_definition[FU_number].initialized = 1;
     #endif
     
-    total_blocks_to_send = virtual_architecture->partition[x][y].element.element_info->FU_4_bit_blocks[FU_number];
+    total_blocks_to_send = 2*virtual_architecture->partition[x][y].element.element_info->FU_4_bit_blocks[FU_number];
     blocks_sent = 0;
     i = 0;
     while (total_blocks_to_send > blocks_sent) {
@@ -1344,22 +1344,25 @@ static void update_partition_location_info(virtual_architecture_t *virtual_archi
     volatile uint32_t (*PE_ADDR)[PE_SIZE] = (volatile uint32_t (*)[PE_SIZE]) FU_MEM_BASE_ADDR;
     int i;
     for (i=0; i<NUM_FU_FUNCTIONS; i++) {
-      uint32_t f1, f2; //Estos son los frames 1 y 2.
+      uint32_t f1_stage1, f2_stage1, f1_stage2, f2_stage2; //Estos son los frames 1 y 2.
       
       // Stage 1 (2 frames; ABOVE stage 2)
-      f1 = f2 = lut_functions[i][0];
-      f1 = f1 >> 16;    // frame 1
-      f2 = f2 & 0xFFFF; // frame 2
-      PE_ADDR[i][0] = PE_ADDR[i][1] = f1<<16 | f1;
-      PE_ADDR[i][4] = PE_ADDR[i][5] = f2<<16 | f2;
-      
+      f1_stage1 = f2_stage1 = lut_functions[i][0];
+      f1_stage1 = f1_stage1 >> 16;    // frame 1
+      f2_stage1 = f2_stage1 & 0xFFFF; // frame 2
+
+
       // Stage 2 (2 frames; BELOW stage 1)
-      f1 = f2 = lut_functions[i][1];
-      f1 = f1 >> 16;    // frame 1
-      f2 = f2 & 0xFFFF; // frame 2
+      f1_stage2 = f2_stage2 = lut_functions[i][1];
+      f1_stage2 = f1_stage2 >> 16;    // frame 1
+      f2_stage2 = f2_stage2 & 0xFFFF; // frame 2
       
-      PE_ADDR[i][2] = PE_ADDR[i][3] = f1<<16 | f1;
-      PE_ADDR[i][6] = PE_ADDR[i][7] = f2<<16 | f2;
+      for (int j=0; j<2; j++) {
+    	  PE_ADDR[i][j] = f1_stage2<<16 | f1_stage1;
+      }
+      for (int j=4; j<6; j++) {
+		  PE_ADDR[i][j] = f2_stage2<<16 | f2_stage1;
+      }
     }
     
   }
