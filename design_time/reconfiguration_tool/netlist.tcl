@@ -437,6 +437,9 @@ namespace eval ::reconfiguration_tool::netlist {
     for {set j 0} {$j < $number_of_LUTS} {incr j} {
       set dummy_LUT_name ${cell}/dummy_LUT_IN_${j}
       create_cell -reference LUT6 $dummy_LUT_name
+      #We change the truth table to O=I0 + I1 + I2 + I3 + I4 + I5 so that the output depends on all 
+      #the LUT inputs and therefore are considered in the timing analysis 
+      set_property INIT 64'hFFFFFFFFFFFFFFFE [get_cells $dummy_LUT_name]
     }
     set LUT_number 0
     set pin_number 0
@@ -457,12 +460,39 @@ namespace eval ::reconfiguration_tool::netlist {
       set dummy_LUT_pin [get_pins -of_objects [get_cells ${cell}/dummy_LUT_IN_${LUT_number}] -filter "DIRECTION == IN && NAME =~ */I${pin_number}*"] 
       connect_net -net $net_name -objects [list $dummy_LUT_pin $pin]
       set_property -quiet -name DONT_TOUCH -value yes -object [get_nets -boundary_type lower -of_objects $pin]
-      set_property -quiet -name DONT_TOUCH -value yes -object [get_nets -boundary_type upper -of_objects $pin]
       incr pin_number
       if {$pin_number >= $max_number_of_nets_per_LUT} {
         set pin_number 0
         incr LUT_number
       }    
+    }
+    # We use connect the inputs of the last LUT with the last input pin
+    if {$pin_number != 0} {
+      set_property -quiet -name DONT_TOUCH -value no -object [get_nets -boundary_type lower -of_objects $pin]
+      for {set i $pin_number} {$i < $max_number_of_nets_per_LUT} {incr i} {
+        set dummy_LUT_pin [get_pins -of_objects [get_cells ${cell}/dummy_LUT_IN_${LUT_number}] -filter "DIRECTION == IN && NAME =~ */I${i}*"] 
+        connect_net -net $net_name -objects [list $dummy_LUT_pin $pin]
+      }
+      set_property -quiet -name DONT_TOUCH -value yes -object [get_nets -boundary_type lower -of_objects $pin]
+    }
+    
+    
+    
+    set clk_net [get_nets ${cell}/dummy_net_clk]
+    if {$clk_net != ""} {
+      set_property -quiet -name DONT_TOUCH -value no -object $clk_net
+      for {set j 0} {$j < $number_of_LUTS} {incr j} {
+        set FF_name ${cell}/dummy_FF_IN_${j}
+        set dummy_LUT_name ${cell}/dummy_LUT_IN_${j}
+        create_cell -reference FDRE $FF_name
+        set dummy_FF_IN_pin [get_pins -of [get_cells $FF_name] -filter {DIRECTION == IN && REF_PIN_NAME == D}]
+        set dummy_LUT_OUT_pin  [get_pins -of [get_cells $dummy_LUT_name] -filter {DIRECTION == OUT}]
+        set net_name ${cell}/dummy_LUT_to_FF_${j}
+        create_net $net_name
+        connect_net -net $net_name -objects [list $dummy_FF_IN_pin $dummy_LUT_OUT_pin]
+        set dummy_FF_clk_pin [get_pins -of [get_cells $FF_name] -filter {DIRECTION == IN && REF_PIN_NAME == C}] 
+        connect_net -net $clk_net -objects $dummy_FF_clk_pin
+      }
     }
     # We now connect the output dummy logic. 
     set output_pins [get_pins -of_objects $cell -filter {DIRECTION == OUT}]
@@ -500,15 +530,23 @@ namespace eval ::reconfiguration_tool::netlist {
       set pin_name [get_property REF_PIN_NAME $pin]
       set net_name ${cell}/dummy_net_${pin_name}
       create_net $net_name
-      set dummy_LUT_name ${cell}/dummy_LUT_OUT_${pin_name}
-      create_cell -reference LUT6 $dummy_LUT_name
-      set dummy_LUT_pin [get_pins -of [get_cells $dummy_LUT_name] -filter {DIRECTION == OUT}] 
-      connect_net -net $net_name -objects [list $dummy_LUT_pin $pin]
-      # set FF_name ${cell}/dummy_FF_${pin_name}
-      # create_cell -reference FDRE $FF_name
-      # set dummy_FF_pin [get_pins -of [get_cells $FF_name] -filter {DIRECTION == OUT}] 
-      # connect_net -net $net_name -objects [list $dummy_FF_pin $pin]
+      # set dummy_LUT_name ${cell}/dummy_LUT_OUT_${pin_name}
+      # create_cell -reference LUT6 $dummy_LUT_name
+      # set dummy_LUT_pin [get_pins -of [get_cells $dummy_LUT_name] -filter {DIRECTION == OUT}] 
+      # connect_net -net $net_name -objects [list $dummy_LUT_pin $pin]
+      set FF_name ${cell}/dummy_FF_out_${pin_name}
+      create_cell -reference FDRE $FF_name
+      set dummy_FF_pin [get_pins -of [get_cells $FF_name] -filter {DIRECTION == OUT}] 
+      connect_net -net $net_name -objects [list $dummy_FF_pin $pin]
       set_property -quiet -name DONT_TOUCH -value yes -object [get_nets -boundary_type lower -of_objects $pin]
+      if {$clk_net != ""} {
+        set dummy_FF_clk_pin [get_pins -of [get_cells $FF_name] -filter {DIRECTION == IN && REF_PIN_NAME == C}] 
+        connect_net -net $clk_net -objects $dummy_FF_clk_pin
+      }
+      
+    }
+    if {$clk_net != ""} {
+      set_property -quiet -name DONT_TOUCH -value yes -object $clk_net
     }
     # We add the dummy logic for global 
     add_dummy_logic_to_global_nets $partition_name $partition_group_name
