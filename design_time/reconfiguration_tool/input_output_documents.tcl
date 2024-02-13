@@ -375,7 +375,13 @@ namespace eval ::reconfiguration_tool::input_output_documents {
     if {[catch {write_bitstream -no_partial_bitfile -force $bitstream_file} errmsg]} {
       error "error generating bitstream"
     }
-    exec python [file join $working_directory "auxiliary_tools" "generate_partial_bitstream.py"] $bitstream_file $pblock $partial_bitstream_file
+    if {[info exists ::env(PYTHONPATH)]} {
+      unset ::env(PYTHONPATH)
+    }
+    if {[info exists ::env(PYTHONHOME)]} {
+      unset ::env(PYTHONHOME)
+    }
+    exec python2 [file join $working_directory "auxiliary_tools" "generate_partial_bitstream.py"] $bitstream_file $pblock $partial_bitstream_file
     file delete -force ${directory}/${project_name}/BITSTREAMS_TEMP
   }
 
