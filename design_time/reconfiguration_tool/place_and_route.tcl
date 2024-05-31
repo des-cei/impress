@@ -307,7 +307,7 @@ proc get_fence_nodes {pblock_name} {
     
 
     set fence_nodes [get_external_fence_nodes]
-    set external_fence [create_blocking_net external_fence $fence_nodes]
+    set external_fence [create_blocking_net external_fence_impress $fence_nodes]
     
 
     ######################################################################################
@@ -334,22 +334,22 @@ proc get_fence_nodes {pblock_name} {
     # it has been observed that this way Vivado can route more designs that otherwise find 
     # unroutable. 
     if {$type == "static"} {
-      route_design -auto_delay -nets [get_nets -hierarchical -filter {ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence*}] -quiet
+      route_design -auto_delay -nets [get_nets -hierarchical -filter {ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence_impress*}] -quiet
     } else {
       # If we dont route the physical nets first then sometimes the vivado router can't 
       # get a valid solution
       route_design -physical_nets
-      route_design -auto_delay -nets [get_nets -hierarchical -filter {ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence*}] -quiet
+      route_design -auto_delay -nets [get_nets -hierarchical -filter {ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence_impress*}] -quiet
       # Sometimes routing the physical route nets gives an error, if that is the case we 
       # unroute and reroute the design
-      if {[llength [get_nets -hierarchical -filter {ROUTE_STATUS != NOLOADS && ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence*}]]} {
+      if {[llength [get_nets -hierarchical -filter {ROUTE_STATUS != NOLOADS && ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence_impress*}]]} {
         route_design -unroute
-        route_design -auto_delay -nets [get_nets -hierarchical -filter {ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence*}] -quiet
+        route_design -auto_delay -nets [get_nets -hierarchical -filter {ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence_impress*}] -quiet
       }
     }
     
     #We try to route nets with conflicts 
-    set conflict_nets [get_nets -hierarchical -filter {ROUTE_STATUS != NOLOADS && ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence*}]
+    set conflict_nets [get_nets -hierarchical -filter {ROUTE_STATUS != NOLOADS && ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence_impress*}]
     if {[llength $conflict_nets] > 0} {
       route_design -unroute -nets $conflict_nets
       route_design -nets $conflict_nets
@@ -357,14 +357,14 @@ proc get_fence_nodes {pblock_name} {
     
     # If we still have conflicting nets we try another strategy. First we route the global clocks. 
     # Then we route local nets. Finally we reroute the global clocks again
-    set conflict_nets [get_nets -hierarchical -filter {ROUTE_STATUS != NOLOADS && ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence*}]
+    set conflict_nets [get_nets -hierarchical -filter {ROUTE_STATUS != NOLOADS && ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence_impress*}]
     if {[llength $conflict_nets] > 0} {
       route_design -unroute
       if {[catch configure_and_route_global_nets errMsg]} {
         error $errMsg
       }
-      set_property is_route_fixed 0 [get_nets -hierarchical -filter {NAME !~ *fence*}]
-      route_design -auto_delay -nets [get_nets -hierarchical -filter {ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence*}] -quiet
+      set_property is_route_fixed 0 [get_nets -hierarchical -filter {NAME !~ *fence_impress*}]
+      route_design -auto_delay -nets [get_nets -hierarchical -filter {ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence_impress*}] -quiet
     }
     # If we route the global clocks before the rest of the design I do not 
     # know why but a lot of hold violations appear.
@@ -374,7 +374,7 @@ proc get_fence_nodes {pblock_name} {
     
     phys_opt_design -placement_opt -routing_opt -slr_crossing_opt -rewire -insert_negative_edge_ffs -critical_cell_opt -hold_fix -retime -critical_pin_opt -clock_opt -quiet
     
-    if {[llength [get_nets -hierarchical -filter {ROUTE_STATUS != NOLOADS && ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence*}]]} {
+    if {[llength [get_nets -hierarchical -filter {ROUTE_STATUS != NOLOADS && ROUTE_STATUS != ROUTED && ROUTE_STATUS != INTRASITE && NAME !~ *fence_impress*}]]} {
       error "routing errors"
     }
     
@@ -484,9 +484,9 @@ proc get_fence_nodes {pblock_name} {
       set allowable_nodes [global_node_position [expr $position -1]]
       # set used_nodes [concat $used_nodes $allowable_nodes]
       set global_fence_nodes [struct::set difference $all_global_nodes [struct::set union $allowable_nodes $used_nodes]]
-      set global_fence [create_blocking_net global_fence $global_fence_nodes]
+      set global_fence [create_blocking_net global_fence_impress $global_fence_nodes]
       
-      set conflict_nets [get_nets -hierarchical -filter {ROUTE_STATUS == CONFLICTS && NAME !~ *fence*}]
+      set conflict_nets [get_nets -hierarchical -filter {ROUTE_STATUS == CONFLICTS && NAME !~ *fence_impress*}]
       if {[llength $conflict_nets] > 0} {
         set local_nets_using_global_nets [concat $local_nets_using_global_nets $conflict_nets]
         route_design -unroute -nets $local_nets_using_global_nets
