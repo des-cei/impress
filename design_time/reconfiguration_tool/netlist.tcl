@@ -691,6 +691,10 @@ namespace eval ::reconfiguration_tool::netlist {
   proc insert_clock_buffer_in_pin {type pin} {
     set net [get_nets -of_objects $pin] 
     set dont_touch_property [get_property DONT_TOUCH $net]
+    # Sometimes "[get_property DONT_TOUCH $net]" returns an empty value.
+    if {$dont_touch_property == ""} {
+      set dont_touch_property false
+    }
     set_property DONT_TOUCH	false $net 
     set cell "${net}_${type}_inserted"
     disconnect_net -net $net -objects $pin 
