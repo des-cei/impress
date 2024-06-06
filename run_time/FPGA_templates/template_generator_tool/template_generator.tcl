@@ -1,7 +1,7 @@
 package require struct::list
 
 proc generate_template {file_path {device ""}} {
-  # We assume that all the rows have the same resources unless there are GTX 
+  # We assume that all the rows have the same resources unless there are GT_
   # tranceivers.
   if {$device != ""} {
     set_part $device 
@@ -12,14 +12,14 @@ proc generate_template {file_path {device ""}} {
   set middle_column [expr ($highest_column + 1)/2]
   set highest_row [lindex [lsort -integer -increasing [get_property ROW_INDEX [get_clock_regions]]] end]
   
-  # We search for GTX transceivers.
-  set gtx_position_left [lsort -integer -increasing -unique [get_property COLUMN [get_tiles -filter "TILE_TYPE =~ *GTX* && COLUMN < $middle_column"] -quiet]]
+  # We search for GT_ transceivers.
+  set gtx_position_left [lsort -integer -increasing -unique [get_property COLUMN [get_tiles -filter "TILE_TYPE =~ *GT* && COLUMN < $middle_column"] -quiet]]
   if {[llength $gtx_position_left] == 0} {
     set common_row_left_column_index 0
   } else {
     set common_row_left_column_index [expr [lindex $gtx_position_left end] + 1]
   }
-  set gtx_position_right [lsort -integer -increasing -unique [get_property COLUMN [get_tiles -filter "TILE_TYPE =~ *GTX* && COLUMN > $middle_column"] -quiet]]
+  set gtx_position_right [lsort -integer -increasing -unique [get_property COLUMN [get_tiles -filter "TILE_TYPE =~ *GT* && COLUMN > $middle_column"] -quiet]]
   if {[llength $gtx_position_right] == 0} {
     set common_row_right_column_index $highest_column
   } else {
@@ -72,23 +72,37 @@ proc generate_template {file_path {device ""}} {
   if {[string first xc7z  [get_parts -of_objects [get_projects]]] != -1} {
     set zynq 1
     set first_top_row $highest_row
+
+    set row_order_list [list]
+
+    set row_number [expr $highest_row - 1]
+    for {set i 0} {$i < $first_top_row} {incr i} {
+      set row_order_list [concat $row_order_list $row_number]
+      set row_number [expr $row_number - 1]
+    }
+
+    set row_number 0
+    for {set i $first_top_row} {$i <= $highest_row} {incr i} {
+      set row_order_list [concat $row_order_list $row_number] 
+      incr row_number
+    }
   } else {
     set zynq 0
-    set first_top_row [expr $highest_row/2]
-  }
-  
-  set row_order_list [list]
-  
-  set row_number [expr $highest_row - 1]
-  for {set i 0} {$i < $first_top_row} {incr i} {
-    set row_order_list [concat $row_order_list $row_number]
-    set row_number [expr $row_number - 1]
-  }
-  
-  set row_number 0
-  for {set i $first_top_row} {$i <= $highest_row} {incr i} {
-    set row_order_list [concat $row_order_list $row_number] 
-    incr row_number
+    set first_top_row [expr ($highest_row + 1) / 2]
+
+    set row_order_list [list]
+
+    set row_number [expr $first_top_row - 1]
+    for {set i 0} {$i < $first_top_row} {incr i} {
+      set row_order_list [concat $row_order_list $row_number]
+      set row_number [expr $row_number - 1]
+    }
+
+    set row_number 0
+    for {set i $first_top_row} {$i <= $highest_row} {incr i} {
+      set row_order_list [concat $row_order_list $row_number] 
+      incr row_number
+    }
   }
   
   write_run_time_description $file_path $FPGA_resources_expanded $row_order_list $first_top_row $highest_column
@@ -102,13 +116,13 @@ proc generate_template {file_path {device ""}} {
     # TODO I have to check with more FPGAs if the bitstream order is computed 
     # this way because it does not make sense...
     set middle_bitstream_row [expr ($highest_row + 1) / 2] 
-    set position [expr $highest_row - $middle_bitstream_row]
-    for {set i 0} {$i < $highest_row} {incr i} {
+    set position [expr $highest_row + 1 - $middle_bitstream_row]
+    for {set i 0} {$i <= $highest_row} {incr i} {
       set bitstream_order [concat $bitstream_order $position]
       if {[expr $i + 1] < $middle_bitstream_row} {
         incr position 
       } elseif {[expr $i + 1] == $middle_bitstream_row} {
-        set position [expr $highest_row - $middle_bitstream_row -1]
+        set position [expr $highest_row - $middle_bitstream_row]
       } else {
         incr position -1
       }
@@ -146,6 +160,8 @@ proc find_resource_type {tile_type} {
   } elseif {[string first CLK_BUFG $tile_type] != -1} {
     set resource_type [concat $resource_type CLK]
   } elseif {[string first GTX_CHANNEL $tile_type] != -1} {
+    set resource_type [concat $resource_type GT] 
+  } elseif {[string first GTH_CHANNEL $tile_type] != -1} {
     set resource_type [concat $resource_type GT]
   } elseif {[string first IOB $tile_type] != -1} {
     set resource_type [concat $resource_type IOBA]
@@ -301,15 +317,15 @@ proc write_run_time_description {file_path resource_list row_order_list first_to
   puts $file_c "#define BRAM_NOCONTENT 0"
   puts $file_h ""
   puts $file_c "// Block type definition"
-  puts $file_c "#define CLB_L_TYPE 		0"
-  puts $file_c "#define CLB_M_TYPE 		1"
-  puts $file_c "#define DSP_TYPE 			2"
-  puts $file_c "#define BRAM_TYPE 		3"
-  puts $file_c "#define IOBA_TYPE 		4"
-  puts $file_c "#define IOBB_TYPE 		5"
-  puts $file_c "#define CLK_TYPE 			6"
-  puts $file_c "#define CFG_TYPE			7"
-  puts $file_c "#define GT_TYPE 			8"
+  puts $file_c "#define CLB_L_TYPE    0"
+  puts $file_c "#define CLB_M_TYPE    1"
+  puts $file_c "#define DSP_TYPE      2"
+  puts $file_c "#define BRAM_TYPE     3"
+  puts $file_c "#define IOBA_TYPE     4"
+  puts $file_c "#define IOBB_TYPE     5"
+  puts $file_c "#define CLK_TYPE      6"
+  puts $file_c "#define CFG_TYPE      7"
+  puts $file_c "#define GT_TYPE       8"
   puts $file_h ""
   puts $file_h "#define MAX_ROWS    [llength $row_order_list]"
   puts $file_h "#define MAX_COLUMNS $max_column"
@@ -443,11 +459,3 @@ proc write_py_bitstream_description {file_path resource_list common_row_resource
   flush $file_py
   close $file_py
 }
-
-
-
-
-
-
-
-
