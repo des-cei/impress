@@ -234,7 +234,7 @@ namespace eval ::reconfiguration_tool::netlist {
     variable ::reconfiguration_tool::working_directory
     
     set need_to_synthesize 1
-    set valid_extensions "*.vhd *.v *.xdc *.bd *.edif *.xci *.dcp *.tcl"
+    set valid_extensions "*.vhd *.v *.sv *.xdc *.bd *.edif *.xci *.dcp *.tcl"
     set directory [dict get $project_variables directory]
     set project_name [dict get $project_variables project_name]
     
@@ -258,6 +258,9 @@ namespace eval ::reconfiguration_tool::netlist {
             read_vhdl $file
           }
           .v {
+            read_verilog $file
+          }
+          .sv {
             read_verilog $file
           }
           .xdc {
